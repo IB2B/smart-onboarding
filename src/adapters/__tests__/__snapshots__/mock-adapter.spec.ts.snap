@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`mock adapter > returns stable client list and thread payloads 1`] = `
+{
+  "company": "Northstar Dental",
+  "contactName": "Mina Ghazali",
+  "email": "mina@northstar.dental",
+  "id": "cl_1",
+  "lastActivity": "2h ago",
+  "progress": 62,
+  "status": "active",
+}
+`;
+
+exports[`mock adapter > returns stable client list and thread payloads 2`] = `
+{
+  "content": "Welcome Mina. I reviewed your brief and see premium patient onboarding and appointment flows are a priority. Should we define the brand tone first or map conversion pages first?",
+  "createdAt": "2026-04-03T09:14:00.000Z",
+  "id": "m1",
+  "role": "assistant",
+}
+`;

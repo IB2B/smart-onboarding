@@ -1,0 +1,358 @@
+@import 'tailwindcss';
+@plugin 'daisyui';
+
+@plugin "daisyui/theme" {
+  name: 'aura-frost';
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #f6f8fc;
+  --color-base-200: #e9eef7;
+  --color-base-300: #dde6f2;
+  --color-base-content: #2e3445;
+  --color-primary: #5b6cff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #7ca6ff;
+  --color-secondary-content: #12254a;
+  --color-accent: #d9e6ff;
+  --color-accent-content: #1f355f;
+  --color-neutral: #edf2fa;
+  --color-neutral-content: #2e3445;
+  --color-info: #cfe3ff;
+  --color-info-content: #193563;
+  --color-success: #d8f3e9;
+  --color-success-content: #1f5d49;
+  --color-warning: #fdf0d2;
+  --color-warning-content: #6b4e10;
+  --color-error: #ffe2e2;
+  --color-error-content: #742f2f;
+  --radius-selector: 0.75rem;
+  --radius-field: 1rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: 'aura-slate';
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #f4f5f7;
+  --color-base-200: #e5e8ee;
+  --color-base-300: #d7dce7;
+  --color-base-content: #1f2430;
+  --color-primary: #4f46e5;
+  --color-primary-content: #ffffff;
+  --color-secondary: #0ea5e9;
+  --color-secondary-content: #062331;
+  --color-accent: #dbeafe;
+  --color-accent-content: #173b6b;
+  --color-neutral: #eceff5;
+  --color-neutral-content: #1f2430;
+  --color-info: #dbeafe;
+  --color-info-content: #123b72;
+  --color-success: #dcfce7;
+  --color-success-content: #165f34;
+  --color-warning: #fef3c7;
+  --color-warning-content: #713f12;
+  --color-error: #fee2e2;
+  --color-error-content: #7f1d1d;
+  --radius-selector: 0.75rem;
+  --radius-field: 0.875rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: 'aura-warm';
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #faf8f4;
+  --color-base-200: #f0ebe3;
+  --color-base-300: #e6ded3;
+  --color-base-content: #2b2a28;
+  --color-primary: #7c5cff;
+  --color-primary-content: #ffffff;
+  --color-secondary: #3d8bff;
+  --color-secondary-content: #0d2d54;
+  --color-accent: #ebddff;
+  --color-accent-content: #3c285f;
+  --color-neutral: #f3eee6;
+  --color-neutral-content: #2b2a28;
+  --color-info: #dce9ff;
+  --color-info-content: #0e3566;
+  --color-success: #dff5e7;
+  --color-success-content: #1f5b3a;
+  --color-warning: #fdecc8;
+  --color-warning-content: #6f4d0f;
+  --color-error: #ffe1df;
+  --color-error-content: #6a2e2a;
+  --radius-selector: 0.875rem;
+  --radius-field: 1rem;
+  --radius-box: 1.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+:root {
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+  --app-bg: #f3f4f6;
+}
+
+[data-theme='aura-slate'] {
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-ui: 'Inter', sans-serif;
+  --app-bg: #eef0f4;
+}
+
+[data-theme='aura-warm'] {
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-ui: 'IBM Plex Sans', sans-serif;
+  --app-bg: #f5f2eb;
+}
+
+[data-font-pair='inter-ibmplex'] {
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+}
+
+[data-font-pair='manrope-ibmplex'] {
+  --font-body: 'Manrope', sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+}
+
+[data-font-pair='jakarta-inter'] {
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+}
+
+[data-density='comfortable'] .table :where(th, td),
+[data-density='comfortable'] .btn,
+[data-density='comfortable'] .select,
+[data-density='comfortable'] .textarea {
+  --size: 1rem;
+}
+
+[data-density='compact'] .table :where(th, td),
+[data-density='compact'] .btn,
+[data-density='compact'] .select,
+[data-density='compact'] .textarea {
+  --size: 0.8rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-base-content);
+  background: var(--app-bg);
+}
+
+[data-icon-pack='phosphor'] .aura-heading {
+  letter-spacing: 0.015em;
+}
+
+[data-icon-pack='tabler'] .aura-heading {
+  letter-spacing: 0.005em;
+}
+
+.aura-shell {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.aura-glass {
+  border: 1px solid color-mix(in srgb, var(--color-base-content) 9%, transparent);
+  background: var(--color-base-100);
+  box-shadow: none;
+}
+
+.aura-heading {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 150ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ---- Animated Orb ---- */
+.orb {
+  background:
+    radial-gradient(circle at 30% 25%, #dfe7ff 0%, transparent 45%),
+    radial-gradient(circle at 70% 70%, #5b6cff 0%, transparent 55%),
+    linear-gradient(135deg, #7ca6ff, #5b6cff 50%, #8b5cf6);
+  background-size: 200% 200%;
+  animation: orb-shift 6s ease-in-out infinite, orb-float 4s ease-in-out infinite;
+  box-shadow:
+    0 0 30px rgba(91, 108, 255, 0.3),
+    0 0 60px rgba(91, 108, 255, 0.1);
+}
+
+.orb-glow {
+  animation: orb-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes orb-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  33% {
+    background-position: 100% 50%;
+    filter: hue-rotate(15deg);
+  }
+  66% {
+    background-position: 50% 100%;
+    filter: hue-rotate(-10deg);
+  }
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes orb-glow-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.15);
+  }
+}
+
+/* ---- Spotlight Search ---- */
+.spotlight-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  background: rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+.spotlight-card {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 1rem;
+  border: 1px solid #e9ebf5;
+  background: white;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.spotlight-enter-active,
+.spotlight-leave-active {
+  transition: opacity 200ms ease;
+}
+
+.spotlight-enter-active .spotlight-card,
+.spotlight-leave-active .spotlight-card {
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.spotlight-enter-from,
+.spotlight-leave-to {
+  opacity: 0;
+}
+
+.spotlight-enter-from .spotlight-card {
+  transform: scale(0.95) translateY(-10px);
+  opacity: 0;
+}
+
+.spotlight-leave-to .spotlight-card {
+  transform: scale(0.97) translateY(-5px);
+  opacity: 0;
+}
+
+/* Typing indicator dots */
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: color-mix(in oklch, var(--color-primary) 60%, transparent);
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+/* Skeleton shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-base-200) 25%,
+    var(--color-base-300) 50%,
+    var(--color-base-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  aside {
+    transition-duration: 0ms !important;
+  }
+  .orb,
+  .orb-glow {
+    animation: none;
+  }
+  .spotlight-enter-active,
+  .spotlight-leave-active {
+    transition-duration: 0ms !important;
+  }
+  .spotlight-enter-from .spotlight-card,
+  .spotlight-leave-to .spotlight-card {
+    transform: none;
+  }
+  .typing-dot { animation: none; opacity: 0.5; }
+  .skeleton-shimmer { animation: none; background: var(--color-base-200); }
+}
