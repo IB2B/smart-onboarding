@@ -1,16 +1,17 @@
 <template>
   <div
-    class="flex items-start gap-3"
+    class="aura-msg-row aura-msg-row--assistant"
     role="status"
     aria-label="Assistant is typing"
   >
-    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-      <PhSparkle :size="14" weight="fill" />
-    </div>
-    <div class="inline-flex items-center gap-1 rounded-2xl border border-base-300 bg-base-100 px-4 py-3">
-      <span class="typing-dot" aria-hidden="true" />
-      <span class="typing-dot [animation-delay:0.2s]" aria-hidden="true" />
-      <span class="typing-dot [animation-delay:0.4s]" aria-hidden="true" />
+    <div class="aura-msg-column aura-msg-column--assistant">
+      <div class="aura-typing-inline">
+        <PhSparkle :size="13" weight="fill" class="text-primary/60" />
+        <span class="typing-dot" aria-hidden="true" />
+        <span class="typing-dot [animation-delay:0.2s]" aria-hidden="true" />
+        <span class="typing-dot [animation-delay:0.4s]" aria-hidden="true" />
+      </div>
+      <span class="aura-msg-time aura-msg-time--assistant">typing...</span>
     </div>
   </div>
 </template>

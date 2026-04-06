@@ -6,7 +6,7 @@
     :density="store.decision.density"
   >
     <template #sidebarHeader>
-      <AuraLogo brand-name="AURA" />
+      <AuraLogo brand-name="IntelligentB2B" />
     </template>
 
     <template #sidebar="{ collapsed }">
@@ -17,8 +17,11 @@
           @click="spotlightOpen = true"
         >
           <PhMagnifyingGlass :size="16" />
-          <span class="flex-1 text-left text-sm">Search</span>
-          <kbd class="rounded border border-[#e1e5ee] bg-[#f4f6fb] px-1 py-0.5 text-[10px] text-[#7d73ff]">⌘K</kbd>
+          <span class="flex-1 text-left text-sm font-medium tracking-[-0.01em]">Search</span>
+          <kbd class="inline-flex items-center gap-1.5 rounded border border-[#e1e5ee] bg-[#f4f6fb] px-1.5 py-0.5 text-[10px] text-[#7d73ff]">
+            <span aria-hidden="true">⌘</span>
+            <span>K</span>
+          </kbd>
         </button>
       </template>
       <template v-else>
@@ -41,7 +44,7 @@
           type="button"
           :class="collapsed
             ? 'flex w-full items-center justify-center rounded-lg p-2 text-slate-500 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150'
-            : 'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] text-slate-600 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150'"
+            : 'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[14px] font-medium tracking-[-0.01em] text-slate-600 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150'"
           :title="collapsed ? item.label : undefined"
           :aria-label="collapsed ? item.label : undefined"
         >
@@ -58,7 +61,7 @@
               v-for="item in tomorrowPrompts"
               :key="item"
               type="button"
-              class="w-full truncate rounded-lg px-3 py-1.5 text-left text-[13px] text-slate-500 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150"
+              class="w-full truncate rounded-lg px-3 py-1.5 text-left text-[13px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-500 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150"
             >{{ item }}</button>
           </div>
           <div>
@@ -67,7 +70,7 @@
               v-for="item in olderPrompts"
               :key="item"
               type="button"
-              class="w-full truncate rounded-lg px-3 py-1.5 text-left text-[13px] text-slate-500 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150"
+              class="w-full truncate rounded-lg px-3 py-1.5 text-left text-[13px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-500 hover:bg-[#f4f6fb] cursor-pointer transition-colors duration-150"
             >{{ item }}</button>
           </div>
         </div>
@@ -76,14 +79,47 @@
       <ProfileDock detail="judha.design@gmail.com" name="Judha Magyusta" />
     </template>
 
-    <div class="flex h-full flex-col">
-      <header class="mb-2 flex items-center justify-end pb-1">
-        <button
-          type="button"
-          class="rounded-lg bg-[#5b6cff] px-4 py-2 text-sm font-medium text-white hover:bg-[#4a5be8] cursor-pointer transition-colors duration-150"
-        >
-          + New Chat
-        </button>
+    <template #default="{ collapsed, toggle }">
+      <div class="flex h-full flex-col">
+      <header class="-mx-3 -mt-3 mb-4 border-b border-[#e4e4e4] px-4 py-[10px] md:-mx-6 md:-mt-6 md:px-[15px]">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center text-[#0a0a0a]">
+            <button
+              type="button"
+              class="mr-[6px] flex h-8 w-8 items-center justify-center rounded-[5px] text-[#0a0a0a] hover:bg-black/[0.03] transition-colors duration-150"
+              aria-label="Toggle sidebar"
+              :aria-expanded="!collapsed"
+              @click="toggle"
+            >
+              <PhSidebarSimple :size="18" />
+            </button>
+            <span class="mr-[6px] h-3 w-px bg-[#0a0a0a]/40" aria-hidden="true" />
+            <p class="aura-topbar-title text-[14px] tracking-[-0.04em]">Smart Onboarding</p>
+          </div>
+          <div class="flex items-center gap-[5px]">
+            <button
+              type="button"
+              class="flex h-[30px] w-10 items-center justify-center rounded-[5px] border border-black/15 text-[#0a0a0a] hover:bg-black/[0.03] transition-colors duration-150"
+              aria-label="Language"
+            >
+              <PhTranslate :size="16" />
+            </button>
+            <button
+              type="button"
+              class="flex h-[30px] w-10 items-center justify-center rounded-[5px] border border-black/15 text-[#0a0a0a] hover:bg-black/[0.03] transition-colors duration-150"
+              aria-label="Theme"
+            >
+              <PhMoon :size="16" />
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-sm aura-action-label h-[30px] min-h-[30px] rounded-[5px] border-0 px-3 text-[13px]"
+            >
+              New Chat
+              <PhPlus :size="16" />
+            </button>
+          </div>
+        </div>
       </header>
 
       <div class="flex flex-1 flex-col overflow-hidden">
@@ -96,17 +132,20 @@
           </div>
 
           <!-- WELCOME STATE: no messages -->
-          <div v-else-if="sessionMessages.length === 0" key="welcome" class="flex flex-1 flex-col items-center justify-center px-4">
+          <div v-else-if="showWelcome" key="welcome" class="flex flex-1 flex-col items-center justify-center px-4">
             <div class="relative flex items-center justify-center">
               <div class="absolute h-24 w-24 rounded-full bg-[#5b6cff]/20 blur-xl orb-glow" />
               <div class="relative h-20 w-20 rounded-full orb" />
             </div>
-            <h1 class="aura-heading mt-5 text-center text-[44px] font-bold leading-[1.15] tracking-[-0.01em] text-[#242732]">
-              Good Morning, Judha<br />
-              <span class="bg-gradient-to-r from-[#5b6cff] to-[#7ca6ff] bg-clip-text text-transparent">
-                How Can I Assist You Today?
+            <h1 class="aura-heading mt-5 text-center text-[28px] font-medium leading-[1.2] tracking-[-0.04em] text-[#0a0a0a]">
+              Welcome back,
+              <span class="aura-hero-emphasis">
+                Intelligent People!
               </span>
             </h1>
+            <p class="mt-[10px] max-w-[421px] text-center text-[14px] font-medium leading-[1.22] tracking-[-0.04em] text-[#0a0a0a99]">
+              Let's pick up right where we left off. I'm here to guide you through the rest of your setup and answer any questions
+            </p>
             <div class="mt-9 w-full max-w-[930px]">
               <FloatingComposer
                 v-model="draft"
@@ -146,18 +185,29 @@
         </Transition>
       </div>
 
-      <p v-if="loadError" class="mx-auto mt-2 w-full max-w-[920px] rounded-xl border border-error/40 bg-error/15 p-3 text-sm text-error-content">
-        {{ loadError }}
-      </p>
-    </div>
-    <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
+        <p v-if="loadError" class="mx-auto mt-2 w-full max-w-[920px] rounded-xl border border-error/40 bg-error/15 p-3 text-sm text-error-content">
+          {{ loadError }}
+        </p>
+      </div>
+      <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
+    </template>
   </AppShell>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { PhBookOpenText, PhClockCounterClockwise, PhCompass, PhHouse, PhMagnifyingGlass } from '@phosphor-icons/vue'
+import {
+  PhBookOpenText,
+  PhClockCounterClockwise,
+  PhCompass,
+  PhHouse,
+  PhMagnifyingGlass,
+  PhMoon,
+  PhPlus,
+  PhSidebarSimple,
+  PhTranslate,
+} from '@phosphor-icons/vue'
 
 import { apiClient } from '@/services/api-client'
 import AuraLogo from '@/components/system/AuraLogo.vue'
@@ -191,6 +241,7 @@ const sessionMessages = ref<ThreadMessage[]>([])
 const sending = ref(false)
 const loadError = ref('')
 const loading = ref(true)
+const showWelcome = ref(true)
 const navItems = [
   { label: 'Home', icon: PhHouse },
   { label: 'Explore', icon: PhCompass },
@@ -231,6 +282,7 @@ async function sendMessage() {
   if (!draft.value.trim() || sending.value) return
   loadError.value = ''
   sending.value = true
+  showWelcome.value = false
   const messageText = draft.value
   draft.value = ''
   sessionMessages.value = [

@@ -18,9 +18,11 @@
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.2.9",
+    "@fontsource/geist": "^5.2.8",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/manrope": "^5.2.8",
+    "@fontsource/playfair-display": "^5.2.8",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@phosphor-icons/vue": "^2.2.1",
     "@tabler/icons-vue": "^3.41.1",

@@ -3,6 +3,14 @@ export type FontPairId = 'manrope-fraunces' | 'inter-ibmplex' | 'manrope-ibmplex
 export type IconPackId = 'phosphor' | 'tabler' | 'lucide'
 export type DensityId = 'comfortable' | 'balanced' | 'compact'
 export type AiProvider = 'openrouter' | 'openai'
+export type MilestoneKey = 'brand_identity' | 'technical_needs' | 'target_audience' | 'timeline_budget'
+export type OnboardingPhase = 'welcome' | MilestoneKey | 'review' | 'complete'
+export type MilestoneStatus = 'pending' | 'in_progress' | 'complete' | 'blocked'
+export type OnboardingStatus = 'active' | 'paused' | 'complete'
+export type SeedSourceType = 'audio' | 'document' | 'notes' | 'url'
+export type IngestStatus = 'queued' | 'processing' | 'ready' | 'warning' | 'failed'
+export type AlertSeverity = 'info' | 'warning' | 'critical'
+export type AlertStatus = 'open' | 'resolved'
 
 export interface SpecDecision {
   themeId: ThemeId
@@ -20,6 +28,105 @@ export interface ClientSummary {
   status: 'invited' | 'active' | 'blocked'
   progress: number
   lastActivity: string
+}
+
+export interface MilestoneRecord {
+  status: MilestoneStatus
+  data: Record<string, unknown>
+}
+
+export type MilestoneMap = Record<MilestoneKey, MilestoneRecord>
+
+export interface OnboardingState {
+  id: string
+  clientId: string
+  phase: OnboardingPhase
+  milestones: MilestoneMap
+  collectedData: Record<string, unknown>
+  status: OnboardingStatus
+  lastActivity: string
+  completedAt?: string
+}
+
+export interface AdminSeedRecord {
+  id: string
+  clientId: string
+  title: string
+  sourceType: SeedSourceType
+  storagePath?: string
+  rawTranscript?: string
+  processedSummary?: string
+  createdBy?: string
+  createdAt: string
+}
+
+export interface AdminDocumentChunkRecord {
+  id: string
+  seedId: string
+  clientId: string
+  content: string
+  chunkIndex: number
+  metadata: Record<string, unknown>
+  createdAt: string
+}
+
+export interface AdminIngestState {
+  id: string
+  clientId: string
+  seedId: string
+  status: IngestStatus
+  progress: number
+  chunkCount: number
+  note: string
+  updatedAt: string
+}
+
+export interface AdminAlert {
+  id: string
+  clientId?: string
+  seedId?: string
+  severity: AlertSeverity
+  status: AlertStatus
+  category: 'stale' | 'ingest' | 'milestone' | 'message' | 'ops'
+  title: string
+  description: string
+  createdAt: string
+}
+
+export interface AdminDashboardSnapshot {
+  generatedAt: string
+  totals: {
+    clients: number
+    active: number
+    invited: number
+    blocked: number
+  }
+  completion: {
+    average: number
+    complete: number
+    inProgress: number
+  }
+  freshness: {
+    stale: number
+    thresholdHours: number
+  }
+  ingest: {
+    healthy: number
+    warning: number
+    failed: number
+    queued: number
+  }
+  alerts: AdminAlert[]
+}
+
+export interface AdminClientDetailBundle {
+  client: ClientSummary
+  onboardingState: OnboardingState
+  seeds: AdminSeedRecord[]
+  ingestStates: AdminIngestState[]
+  documentChunks: AdminDocumentChunkRecord[]
+  messages: ThreadMessage[]
+  alerts: AdminAlert[]
 }
 
 // Widget payloads ─────────────────────────────────────────────────────────────
@@ -112,4 +219,9 @@ export interface ApiAdapter {
   getClientThread(clientId: string): Promise<ThreadMessage[]>
   getPortalSession(token?: string): Promise<ChatSessionResponse>
   sendPortalMessage(request: ChatRequest): Promise<ChatResponse>
+  getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot>
+  getAdminClientDetailBundle(clientId: string): Promise<AdminClientDetailBundle>
+  getAdminSeedRecords(clientId?: string): Promise<AdminSeedRecord[]>
+  getAdminIngestStates(clientId?: string): Promise<AdminIngestState[]>
+  getAdminAlerts(clientId?: string): Promise<AdminAlert[]>
 }

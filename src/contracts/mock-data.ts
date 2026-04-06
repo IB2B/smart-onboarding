@@ -1,4 +1,12 @@
-import type { ChatSessionResponse, ClientSummary, ThreadMessage } from '@/contracts/api'
+import type {
+  AdminDocumentChunkRecord,
+  AdminSeedRecord,
+  ChatSessionResponse,
+  ClientSummary,
+  MilestoneMap,
+  OnboardingState,
+  ThreadMessage,
+} from '@/contracts/api'
 
 export const mockClients: ClientSummary[] = [
   {
@@ -30,7 +38,201 @@ export const mockClients: ClientSummary[] = [
   },
 ]
 
-export const mockThreadByClient: Record<string, ThreadMessage[]> = {
+const sharedMilestones: MilestoneMap = {
+  brand_identity: {
+    status: 'complete',
+    data: {
+      tone: 'premium calm minimal',
+      logo: 'primary mark locked',
+    },
+  },
+  technical_needs: {
+    status: 'complete',
+    data: {
+      stack: ['HubSpot', 'Calendly', 'Stripe'],
+      integrations: 3,
+    },
+  },
+  target_audience: {
+    status: 'complete',
+    data: {
+      segments: ['Families', 'corporate wellness clients'],
+    },
+  },
+  timeline_budget: {
+    status: 'pending',
+    data: {
+      launchWindow: null,
+      budgetConfirmed: false,
+    },
+  },
+}
+
+export const mockOnboardingStates: OnboardingState[] = [
+  {
+    id: 'os_1',
+    clientId: 'cl_1',
+    phase: 'target_audience',
+    milestones: sharedMilestones,
+    collectedData: {
+      businessModel: 'Private clinic with membership programs',
+      brandDirection: 'Premium calm minimal',
+      targetAudience: 'Families + corporate wellness clients',
+      requiredIntegrations: ['HubSpot', 'Calendly', 'Stripe'],
+      pendingItems: ['Upload brand assets', 'Confirm monthly traffic baseline'],
+    },
+    status: 'active',
+    lastActivity: '2026-04-04T10:14:00.000Z',
+  },
+  {
+    id: 'os_2',
+    clientId: 'cl_2',
+    phase: 'welcome',
+    milestones: {
+      brand_identity: {
+        status: 'pending',
+        data: { tone: 'not yet collected' },
+      },
+      technical_needs: {
+        status: 'pending',
+        data: { stack: [] },
+      },
+      target_audience: {
+        status: 'pending',
+        data: { segments: [] },
+      },
+      timeline_budget: {
+        status: 'pending',
+        data: { launchWindow: null, budgetConfirmed: false },
+      },
+    },
+    collectedData: {
+      businessModel: 'Fleet operations platform',
+      pendingItems: ['Magic link accepted', 'Discovery call not yet scheduled'],
+    },
+    status: 'active',
+    lastActivity: '2026-04-03T10:00:00.000Z',
+  },
+  {
+    id: 'os_3',
+    clientId: 'cl_3',
+    phase: 'technical_needs',
+    milestones: {
+      brand_identity: {
+        status: 'complete',
+        data: { tone: 'editorial and sharp' },
+      },
+      technical_needs: {
+        status: 'in_progress',
+        data: { cms: 'unknown', payments: 'pending review' },
+      },
+      target_audience: {
+        status: 'pending',
+        data: { segments: [] },
+      },
+      timeline_budget: {
+        status: 'pending',
+        data: { launchWindow: null, budgetConfirmed: false },
+      },
+    },
+    collectedData: {
+      businessModel: 'Commerce brand',
+      pendingItems: ['Confirm CMS constraints', 'Validate payment provider'],
+    },
+    status: 'paused',
+    lastActivity: '2026-03-31T08:55:00.000Z',
+  },
+]
+
+export const mockAdminDataSeeds: AdminSeedRecord[] = [
+  {
+    id: 'seed_1',
+    clientId: 'cl_1',
+    title: 'Brand workshop notes',
+    sourceType: 'notes',
+    rawTranscript: 'Tone direction, patient trust language, and launch sequencing notes.',
+    processedSummary: 'Premium calm positioning with conversion-focused booking path.',
+    createdBy: 'admin_1',
+    createdAt: '2026-04-03T08:40:00.000Z',
+  },
+  {
+    id: 'seed_2',
+    clientId: 'cl_1',
+    title: 'Discovery call transcript',
+    sourceType: 'audio',
+    storagePath: 'raw-uploads/northstar/discovery-call.m4a',
+    rawTranscript: 'Transcript extracted from the latest call. Looking for follow-up on analytics.',
+    createdBy: 'admin_1',
+    createdAt: '2026-04-03T09:10:00.000Z',
+  },
+  {
+    id: 'seed_3',
+    clientId: 'cl_2',
+    title: 'Website brief link',
+    sourceType: 'url',
+    storagePath: 'https://atlasmobility.io/brief',
+    createdBy: 'admin_2',
+    createdAt: '2026-04-02T12:20:00.000Z',
+  },
+  {
+    id: 'seed_4',
+    clientId: 'cl_3',
+    title: 'Legacy CMS export',
+    sourceType: 'document',
+    storagePath: 'raw-uploads/bloom/legacy-cms-export.pdf',
+    rawTranscript: 'Export includes taxonomy notes, payment gateway references, and migration concerns.',
+    processedSummary: 'Needs review due to CMS and payment ambiguity.',
+    createdBy: 'admin_3',
+    createdAt: '2026-03-31T09:00:00.000Z',
+  },
+]
+
+export const mockDocumentChunks: AdminDocumentChunkRecord[] = [
+  {
+    id: 'chunk_1',
+    seedId: 'seed_1',
+    clientId: 'cl_1',
+    content: 'Brand direction favors premium calm language with low-friction scheduling.',
+    chunkIndex: 0,
+    metadata: {
+      sourceType: 'notes',
+      similarity: 0.94,
+    },
+    createdAt: '2026-04-03T08:45:00.000Z',
+  },
+  {
+    id: 'chunk_2',
+    seedId: 'seed_1',
+    clientId: 'cl_1',
+    content: 'Patient onboarding should preserve trust and simplify the first appointment path.',
+    chunkIndex: 1,
+    metadata: {
+      sourceType: 'notes',
+      similarity: 0.91,
+    },
+    createdAt: '2026-04-03T08:46:00.000Z',
+  },
+  {
+    id: 'chunk_3',
+    seedId: 'seed_4',
+    clientId: 'cl_3',
+    content: 'Legacy CMS constraints block confident handoff until platform ownership is confirmed.',
+    chunkIndex: 0,
+    metadata: {
+      sourceType: 'document',
+      similarity: 0.74,
+    },
+    createdAt: '2026-03-31T09:30:00.000Z',
+  },
+]
+
+export interface MockThreadByClient {
+  cl_1: ThreadMessage[]
+  cl_2: ThreadMessage[]
+  cl_3: ThreadMessage[]
+}
+
+export const mockThreadByClient: MockThreadByClient = {
   cl_1: [
     {
       id: 'm1',
@@ -70,6 +272,8 @@ export const mockThreadByClient: Record<string, ThreadMessage[]> = {
     },
   ],
 }
+
+export const mockMessagesByClient: MockThreadByClient = structuredClone(mockThreadByClient)
 
 export const mockPortalSession: ChatSessionResponse = {
   session: {

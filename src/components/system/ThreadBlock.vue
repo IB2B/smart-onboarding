@@ -1,34 +1,16 @@
 <template>
-  <div
-    class="flex items-end gap-3"
-    :class="message.role === 'client' ? 'flex-row-reverse' : 'flex-row'"
-  >
-    <!-- Avatar -->
+  <div :class="rowClass">
     <div
-      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm"
-      :class="
-        message.role === 'assistant'
-          ? 'bg-gradient-to-br from-[#5b6cff] to-[#8b9bff]'
-          : message.role === 'operator'
-            ? 'bg-gradient-to-br from-info to-info/60'
-            : 'bg-gradient-to-br from-[#cad6ff] to-[#e7ecff]'
-      "
+      v-if="showAvatar"
+      class="aura-msg-avatar"
+      :class="avatarClass"
       :aria-hidden="true"
     >
-      <PhSparkle v-if="message.role === 'assistant'" :size="15" weight="fill" class="text-white" />
-      <PhShieldStar v-else-if="message.role === 'operator'" :size="15" weight="fill" class="text-white" />
-      <PhUser v-else :size="15" weight="fill" class="text-[#5b6cff]" />
+      <PhShieldStar :size="15" weight="fill" class="text-white" />
     </div>
 
-    <!-- Bubble + time -->
-    <div
-      class="flex max-w-[72%] flex-col gap-1"
-      :class="message.role === 'client' ? 'items-end' : 'items-start'"
-    >
-      <article
-        class="px-4 py-3 text-sm leading-relaxed shadow-sm"
-        :class="bubbleClass"
-      >
+    <div class="aura-msg-column" :class="columnClass">
+      <article class="aura-msg-surface" :class="surfaceClass">
         <p>{{ message.content }}</p>
 
         <template v-if="props.message.widget_payload">
@@ -51,7 +33,7 @@
         </template>
       </article>
 
-      <span class="px-1 text-[11px] text-base-content/40">{{ formattedTime }}</span>
+      <span class="aura-msg-time" :class="timeClass">{{ formattedTime }}</span>
     </div>
   </div>
 </template>
@@ -59,7 +41,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ThreadMessage } from '@/contracts/api'
-import { PhSparkle, PhShieldStar, PhUser } from '@phosphor-icons/vue'
+import { PhShieldStar } from '@phosphor-icons/vue'
 import ChoiceCard from '@/components/chat/widgets/ChoiceCard.vue'
 import RatingSlider from '@/components/chat/widgets/RatingSlider.vue'
 
@@ -71,16 +53,31 @@ const emit = defineEmits<{
   'widget-respond': [messageId: string, value: string | number]
 }>()
 
-const bubbleClass = computed(() => {
-  if (props.message.role === 'assistant') {
-    return 'rounded-2xl rounded-bl-sm bg-white border border-base-300/60 text-slate-700'
-  }
-  if (props.message.role === 'operator') {
-    return 'rounded-2xl rounded-bl-sm bg-info/15 border border-info/30 text-info-content'
-  }
-  // client — right side bubble
-  return 'rounded-2xl rounded-br-sm bg-gradient-to-br from-[#5b6cff] to-[#6f7fff] text-white border border-transparent'
+const rowClass = computed(() => {
+  if (props.message.role === 'client') return 'aura-msg-row aura-msg-row--client'
+  return 'aura-msg-row aura-msg-row--assistant'
 })
+
+const columnClass = computed(() => {
+  if (props.message.role === 'client') return 'aura-msg-column--client'
+  if (props.message.role === 'operator') return 'aura-msg-column--operator'
+  return 'aura-msg-column--assistant'
+})
+
+const surfaceClass = computed(() => {
+  if (props.message.role === 'assistant') return 'aura-msg-assistant-surface'
+  if (props.message.role === 'operator') return 'aura-msg-operator-shell'
+  return 'aura-msg-user-shell'
+})
+
+const timeClass = computed(() => {
+  if (props.message.role === 'client') return 'aura-msg-time--client'
+  if (props.message.role === 'operator') return 'aura-msg-time--operator'
+  return 'aura-msg-time--assistant'
+})
+
+const showAvatar = computed(() => props.message.role === 'operator')
+const avatarClass = computed(() => 'bg-gradient-to-br from-info to-info/60')
 
 const formattedTime = computed(() => {
   const d = new Date(props.message.createdAt)

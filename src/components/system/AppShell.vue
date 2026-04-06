@@ -19,7 +19,7 @@
             Menu
           </button>
           <slot name="mobileTitle">
-            <span class="text-sm font-medium">Aura Workspace</span>
+            <span class="aura-topbar-title text-sm">Smart Onboarding</span>
           </slot>
         </div>
         <aside
@@ -37,20 +37,7 @@
                 : 'flex h-full w-full flex-col overflow-x-hidden overflow-y-auto p-4',
             ]"
           >
-            <!-- Header row: hamburger toggle + logo slot -->
-            <div
-              :class="['flex items-center mb-4', collapsed ? 'justify-center' : 'justify-between']"
-            >
-              <button
-                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-base-300/60"
-                type="button"
-                aria-controls="desktop-sidebar"
-                :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-                :aria-expanded="!collapsed"
-                @click="toggle"
-              >
-                <PhList :size="18" />
-              </button>
+            <div class="mb-5 flex items-center justify-center">
               <slot name="sidebarHeader" :collapsed="collapsed" />
             </div>
             <slot name="sidebar" :collapsed="collapsed" :toggle="toggle" />
@@ -64,7 +51,7 @@
           <slot name="sidebar" :collapsed="collapsed" :toggle="toggle" />
         </aside>
         <main class="relative min-w-0 flex-1 overflow-hidden bg-base-100 p-3 md:p-6">
-          <slot />
+          <slot :collapsed="collapsed" :toggle="toggle" />
         </main>
       </div>
     </div>
@@ -73,7 +60,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { PhList } from '@phosphor-icons/vue'
 
 import type { ThemeId } from '@/contracts/api'
 import { useSidebarProvider } from '@/composables/useSidebarCollapse'
@@ -86,5 +72,5 @@ defineProps<{
 }>()
 
 const mobileSidebarOpen = ref(false)
-const { collapsed, toggle } = useSidebarProvider()
+const { collapsed, toggle } = useSidebarProvider(false)
 </script>

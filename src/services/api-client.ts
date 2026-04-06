@@ -1,6 +1,24 @@
-import type { AiProvider, ApiAdapter, ChatRequest } from '@/contracts/api'
+import type {
+  AdminAlert,
+  AdminClientDetailBundle,
+  AdminDashboardSnapshot,
+  AdminIngestState,
+  AdminSeedRecord,
+  AiProvider,
+  ApiAdapter,
+  ChatRequest,
+} from '@/contracts/api'
 import { MockApiAdapter } from '@/adapters/mock-adapter'
-import { assertChatSession, assertClientList, assertThreadMessages } from '@/contracts/guards'
+import {
+  assertAdminAlerts,
+  assertAdminClientDetailBundle,
+  assertAdminDashboardSnapshot,
+  assertAdminIngestStates,
+  assertAdminSeedRecords,
+  assertChatSession,
+  assertClientList,
+  assertThreadMessages,
+} from '@/contracts/guards'
 
 class ApiClient {
   private readonly adapter: ApiAdapter
@@ -19,6 +37,26 @@ class ApiClient {
 
   getPortalSession(token?: string) {
     return this.adapter.getPortalSession(token).then(assertChatSession)
+  }
+
+  getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot> {
+    return this.adapter.getAdminDashboardSnapshot().then(assertAdminDashboardSnapshot)
+  }
+
+  getAdminClientDetailBundle(clientId: string): Promise<AdminClientDetailBundle> {
+    return this.adapter.getAdminClientDetailBundle(clientId).then(assertAdminClientDetailBundle)
+  }
+
+  getAdminSeedRecords(clientId?: string): Promise<AdminSeedRecord[]> {
+    return this.adapter.getAdminSeedRecords(clientId).then(assertAdminSeedRecords)
+  }
+
+  getAdminIngestStates(clientId?: string): Promise<AdminIngestState[]> {
+    return this.adapter.getAdminIngestStates(clientId).then(assertAdminIngestStates)
+  }
+
+  getAdminAlerts(clientId?: string): Promise<AdminAlert[]> {
+    return this.adapter.getAdminAlerts(clientId).then(assertAdminAlerts)
   }
 
   sendPortalMessage(params: {
