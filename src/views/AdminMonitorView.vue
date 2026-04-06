@@ -50,6 +50,21 @@
         <div>
           <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/35">Overview</h2>
           <AdminKpiStrip :summary="kpiSummary" :loading="isLoading" />
+          <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            <AdminAlertsCard
+              :alerts="dashboardSnapshot?.alerts ?? []"
+              :clients-map="clientsMap"
+              :loading="isLoading"
+            />
+            <AdminQuickActionsCard
+              :blocked-count="blockedCount"
+              :loading="isRefreshing"
+              @invite="handleInvite"
+              @review-blocked="handleReviewBlocked"
+              @open-chat="handleOpenChat"
+              @refresh="refreshAll"
+            />
+          </div>
         </div>
 
         <!-- Clients section -->
@@ -89,6 +104,7 @@ import { PhArrowClockwise, PhChartLineUp, PhChatTeardropText, PhMagnifyingGlass,
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
+import AdminAlertsCard from '@/components/admin/AdminAlertsCard.vue'
 import AdminClientDetailPanel from '@/components/admin/AdminClientDetailPanel.vue'
 import AdminClientTable, {
   type SortDirection,
@@ -96,6 +112,7 @@ import AdminClientTable, {
   type StatusFilter,
 } from '@/components/admin/AdminClientTable.vue'
 import AdminKpiStrip from '@/components/admin/AdminKpiStrip.vue'
+import AdminQuickActionsCard from '@/components/admin/AdminQuickActionsCard.vue'
 import AdminShellFrame from '@/components/admin/AdminShellFrame.vue'
 import ProfileDock from '@/components/system/ProfileDock.vue'
 import type {
@@ -157,7 +174,7 @@ const sidebarSections = computed(() => [
         label: 'Alerts',
         to: '/admin/monitor',
         icon: PhChatTeardropText,
-        badge: String(dashboardSnapshot.value?.alerts.length ?? 0),
+        badge: String(dashboardSnapshot.value?.alerts.filter(a => a.status === 'open').length ?? 0),
       },
     ],
   },
@@ -166,6 +183,12 @@ const sidebarSections = computed(() => [
     items: [{ label: 'Client Chat', to: '/portal/chat/demo-token', icon: PhChatTeardropText }],
   },
 ])
+
+const clientsMap = computed<Record<string, ClientSummary>>(() =>
+  Object.fromEntries(clients.value.map(c => [c.id, c]))
+)
+
+const blockedCount = computed(() => dashboardSnapshot.value?.totals.blocked ?? 0)
 
 const kpiSummary = computed(() => {
   if (!dashboardSnapshot.value) {
@@ -267,6 +290,18 @@ async function refreshAll() {
 
 function focusSearchField() {
   spotlightOpen.value = true
+}
+
+function handleInvite(): void {
+  // TODO: open invite modal / navigate to invite flow
+}
+
+function handleReviewBlocked(): void {
+  statusFilter.value = 'blocked'
+}
+
+function handleOpenChat(): void {
+  // TODO: navigate to portal chat
 }
 
 onMounted(loadInitialData)
