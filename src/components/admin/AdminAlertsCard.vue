@@ -35,9 +35,7 @@ function severityBadgeClass(severity: AdminAlert['severity']): string {
   <article class="rounded-2xl border border-base-300/80 bg-base-100 p-4">
     <header class="mb-3 flex items-center justify-between gap-3">
       <h3 class="aura-heading text-base font-semibold">Recent Alerts</h3>
-      <span class="text-xs text-base-content/55">
-        {{ alerts.filter(a => a.status === 'open').length }} open
-      </span>
+      <span class="text-xs text-base-content/55">{{ openAlerts.length }} open</span>
     </header>
 
     <!-- Loading skeleton -->
@@ -66,15 +64,17 @@ function severityBadgeClass(severity: AdminAlert['severity']): string {
           v-if="alert.severity === 'critical'"
           :size="15"
           weight="fill"
+          aria-hidden="true"
           class="mt-0.5 shrink-0 text-error-content"
         />
         <PhWarningCircle
           v-else-if="alert.severity === 'warning'"
           :size="15"
           weight="fill"
+          aria-hidden="true"
           class="mt-0.5 shrink-0 text-warning-content"
         />
-        <PhInfo v-else :size="15" weight="fill" class="mt-0.5 shrink-0 text-info-content" />
+        <PhInfo v-else :size="15" weight="fill" aria-hidden="true" class="mt-0.5 shrink-0 text-info-content" />
 
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium leading-snug">
