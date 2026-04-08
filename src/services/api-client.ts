@@ -7,13 +7,18 @@ import type {
   AiProvider,
   ApiAdapter,
   ChatRequest,
+  SeedFileUploadParams,
+  SeedNoteCreateParams,
+  SeedUrlCreateParams,
 } from '@/contracts/api'
 import { MockApiAdapter } from '@/adapters/mock-adapter'
+import { SupabaseApiAdapter } from '@/adapters/supabase-adapter'
 import {
   assertAdminAlerts,
   assertAdminClientDetailBundle,
   assertAdminDashboardSnapshot,
   assertAdminIngestStates,
+  assertAdminSeedRecord,
   assertAdminSeedRecords,
   assertChatSession,
   assertClientList,
@@ -59,6 +64,18 @@ class ApiClient {
     return this.adapter.getAdminAlerts(clientId).then(assertAdminAlerts)
   }
 
+  uploadSeedFile(params: SeedFileUploadParams): Promise<AdminSeedRecord> {
+    return this.adapter.uploadSeedFile(params).then(assertAdminSeedRecord)
+  }
+
+  createNoteSeed(params: SeedNoteCreateParams): Promise<AdminSeedRecord> {
+    return this.adapter.createNoteSeed(params).then(assertAdminSeedRecord)
+  }
+
+  createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord> {
+    return this.adapter.createUrlSeed(params).then(assertAdminSeedRecord)
+  }
+
   sendPortalMessage(params: {
     sessionId: string
     clientId: string
@@ -71,19 +88,22 @@ class ApiClient {
       clientId: params.clientId,
       requestId: `req_${Date.now()}`,
       message: params.message,
-      provider: params.provider ?? 'openrouter',
+      provider: params.provider ?? 'openai',
       token: params.token,
     }
     return this.adapter.sendPortalMessage(request)
+  }
+
+  persistWidgetResponse(messageId: string, value: string | number): Promise<void> {
+    return this.adapter.persistWidgetResponse(messageId, value)
   }
 }
 
 function createAdapter(): ApiAdapter {
   const mode = import.meta.env.VITE_API_ADAPTER ?? 'mock'
-  if (mode === 'mock') {
-    return new MockApiAdapter()
+  if (mode === 'supabase') {
+    return new SupabaseApiAdapter()
   }
-  // Until backend phase, fallback to mock adapter if mode is unknown.
   return new MockApiAdapter()
 }
 

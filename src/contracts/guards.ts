@@ -60,6 +60,13 @@ export function assertAdminSeedRecords(payload: unknown): AdminSeedRecord[] {
   return payload as AdminSeedRecord[]
 }
 
+export function assertAdminSeedRecord(payload: unknown): AdminSeedRecord {
+  if (!isObject(payload) || typeof payload.id !== 'string' || typeof payload.clientId !== 'string') {
+    throw new Error('Invalid admin seed record payload')
+  }
+  return payload as unknown as AdminSeedRecord
+}
+
 export function assertAdminIngestStates(payload: unknown): AdminIngestState[] {
   if (!Array.isArray(payload)) throw new Error('Invalid admin ingest payload')
   return payload as AdminIngestState[]

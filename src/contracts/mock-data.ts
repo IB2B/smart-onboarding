@@ -278,7 +278,9 @@ export const mockMessagesByClient: MockThreadByClient = structuredClone(mockThre
 export const mockPortalSession: ChatSessionResponse = {
   session: {
     clientId: 'cl_1',
-    title: 'Aura onboarding session',
+    contactName: 'Mina Ghazali',
+    companyName: 'Northstar Dental',
+    title: 'Northstar Dental onboarding session',
     messages: [
       {
         id: 'msg_1',

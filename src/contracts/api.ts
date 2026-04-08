@@ -56,8 +56,17 @@ export interface AdminSeedRecord {
   storagePath?: string
   rawTranscript?: string
   processedSummary?: string
+  ingestStatus?: IngestStatus
+  errorMessage?: string
   createdBy?: string
   createdAt: string
+}
+
+export interface SeedUploadProgress {
+  seedId: string
+  phase: 'uploading' | 'processing' | 'chunking' | 'embedding' | 'done' | 'error'
+  percent: number
+  error?: string
 }
 
 export interface AdminDocumentChunkRecord {
@@ -171,6 +180,12 @@ export interface FileDropPayload {
 
 export type WidgetPayload = ChoicesPayload | ScalePayload | CalendarPayload | FileDropPayload
 
+export interface ToolCallRecord {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+}
+
 export interface ThreadMessage {
   id: string
   role: 'client' | 'assistant' | 'operator'
@@ -178,10 +193,14 @@ export interface ThreadMessage {
   createdAt: string
   widget_payload?: WidgetPayload
   widget_response?: string | number
+  tool_calls?: ToolCallRecord[]
+  failed?: boolean
 }
 
 export interface ChatSession {
   clientId: string
+  contactName: string
+  companyName: string
   title: string
   messages: ThreadMessage[]
 }
@@ -214,14 +233,37 @@ export interface ChatResponse {
   snapshotDelta: Partial<OnboardingSnapshot>
 }
 
+export interface SeedFileUploadParams {
+  clientId: string
+  file: File
+  title: string
+  sourceType: SeedSourceType
+}
+
+export interface SeedNoteCreateParams {
+  clientId: string
+  title: string
+  content: string
+}
+
+export interface SeedUrlCreateParams {
+  clientId: string
+  title: string
+  url: string
+}
+
 export interface ApiAdapter {
   getClients(): Promise<ClientSummary[]>
   getClientThread(clientId: string): Promise<ThreadMessage[]>
   getPortalSession(token?: string): Promise<ChatSessionResponse>
   sendPortalMessage(request: ChatRequest): Promise<ChatResponse>
+  persistWidgetResponse(messageId: string, value: string | number): Promise<void>
   getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot>
   getAdminClientDetailBundle(clientId: string): Promise<AdminClientDetailBundle>
   getAdminSeedRecords(clientId?: string): Promise<AdminSeedRecord[]>
   getAdminIngestStates(clientId?: string): Promise<AdminIngestState[]>
   getAdminAlerts(clientId?: string): Promise<AdminAlert[]>
+  uploadSeedFile(params: SeedFileUploadParams): Promise<AdminSeedRecord>
+  createNoteSeed(params: SeedNoteCreateParams): Promise<AdminSeedRecord>
+  createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord>
 }

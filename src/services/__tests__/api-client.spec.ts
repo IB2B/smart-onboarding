@@ -15,6 +15,8 @@ const adapterMocks = vi.hoisted(() => ({
   getPortalSession: vi.fn(async (token?: string): Promise<ChatSessionResponse> => ({
     session: {
       clientId: 'cl_1',
+      contactName: 'Demo User',
+      companyName: 'Demo Company',
       title: 'Demo session',
       messages: [
         {
