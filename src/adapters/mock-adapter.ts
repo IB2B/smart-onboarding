@@ -2,7 +2,6 @@ import type {
   AdminAlert,
   AdminClientDetailBundle,
   AdminDashboardSnapshot,
-  AdminDocumentChunkRecord,
   AdminIngestState,
   AdminSeedRecord,
   ApiAdapter,
@@ -10,7 +9,9 @@ import type {
   ChatResponse,
   ChatSessionResponse,
   ClientSummary,
-  OnboardingState,
+  SeedFileUploadParams,
+  SeedNoteCreateParams,
+  SeedUrlCreateParams,
   ThreadMessage,
   WidgetPayload,
 } from '@/contracts/api'
@@ -23,183 +24,24 @@ import {
   mockPortalSession,
   mockThreadByClient,
 } from '@/contracts/mock-data'
+import {
+  STALE_THRESHOLD_HOURS,
+  buildAlertsForClient,
+  buildIngestState,
+  getMilestoneCompletion,
+  getHoursSince,
+} from './derive'
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-let messageCount = 0
-
-const STALE_THRESHOLD_HOURS = 48
-
-const milestoneCompletionWeight: Record<string, number> = {
-  pending: 0,
-  in_progress: 0.5,
-  complete: 1,
-  blocked: 0.25,
-}
-
-const severityPriority: Record<AdminAlert['severity'], number> = {
-  critical: 0,
-  warning: 1,
-  info: 2,
-}
-
-function getHoursSince(timestamp: string): number {
-  const parsed = new Date(timestamp).getTime()
-  if (!Number.isNaN(parsed)) {
-    return (Date.now() - parsed) / 3_600_000
-  }
-
-  const normalized = timestamp.trim().toLowerCase()
-  const hourMatch = normalized.match(/^(\d+)\s*h(?:ours?)?\s*ago$/)
-  if (hourMatch) {
-    return Number(hourMatch[1] ?? 0)
-  }
-
-  const dayMatch = normalized.match(/^(\d+)\s*d(?:ays?)?\s*ago$/)
-  if (dayMatch) {
-    return Number(dayMatch[1] ?? 0) * 24
-  }
-
-  return Number.POSITIVE_INFINITY
-}
-
-function getMilestoneCompletion(state: OnboardingState): number {
-  const entries = Object.values(state.milestones)
-  if (!entries.length) return 0
-  const total = entries.reduce((sum, milestone) => {
-    const weight = milestoneCompletionWeight[milestone.status] ?? 0
-    return sum + weight
-  }, 0)
-  return Math.round((total / entries.length) * 100)
-}
-
-function deriveIngestStatus(seed: AdminSeedRecord, chunks: AdminDocumentChunkRecord[]): AdminIngestState['status'] {
-  const chunkCount = chunks.length
-  if (seed.processedSummary && chunkCount > 0) return 'ready'
-  if (seed.rawTranscript && chunkCount > 0) return 'processing'
-  if (seed.sourceType === 'url' && !seed.rawTranscript && !seed.processedSummary) return 'queued'
-  return seed.processedSummary ? 'warning' : 'processing'
-}
-
-function deriveIngestProgress(status: AdminIngestState['status'], chunkCount: number): number {
-  if (status === 'ready') return 100
-  if (status === 'processing') return Math.min(88, 45 + chunkCount * 12)
-  if (status === 'queued') return 15
-  if (status === 'warning') return 65
-  return 0
-}
-
-function buildIngestState(seed: AdminSeedRecord): AdminIngestState {
-  const chunks = mockDocumentChunks.filter((chunk) => chunk.seedId === seed.id)
-  const status = deriveIngestStatus(seed, chunks)
-  return {
-    id: `ingest_${seed.id}`,
-    clientId: seed.clientId,
-    seedId: seed.id,
-    status,
-    progress: deriveIngestProgress(status, chunks.length),
-    chunkCount: chunks.length,
-    note:
-      status === 'ready'
-        ? 'Summary ready for replay'
-        : status === 'processing'
-          ? 'Chunking in progress'
-          : status === 'queued'
-            ? 'Waiting for ingestion'
-            : 'Needs review before use',
-    updatedAt: seed.createdAt,
-  }
-}
-
-function buildAlertsForClient(clientId: string): AdminAlert[] {
-  const client = mockClients.find((item) => item.id === clientId)
-  const state = mockOnboardingStates.find((item) => item.clientId === clientId)
-  const seeds = mockAdminDataSeeds.filter((item) => item.clientId === clientId)
-  const alerts: AdminAlert[] = []
-
-  if (client?.status === 'blocked') {
-    alerts.push({
-      id: `alert_${clientId}_blocked`,
-      clientId,
-      severity: 'critical',
-      status: 'open',
-      category: 'ops',
-      title: `${client.company} is blocked`,
-      description: 'Admin intervention is required before the next onboarding step can continue.',
-      createdAt: client.lastActivity,
-    })
-  }
-
-  if (client && getHoursSince(client.lastActivity) >= STALE_THRESHOLD_HOURS) {
-    alerts.push({
-      id: `alert_${clientId}_stale`,
-      clientId,
-      severity: 'warning',
-      status: 'open',
-      category: 'stale',
-      title: `${client.company} has gone stale`,
-      description: `No activity has been recorded in more than ${STALE_THRESHOLD_HOURS} hours.`,
-      createdAt: client.lastActivity,
-    })
-  }
-
-  if (state && state.phase === 'welcome' && state.status === 'active') {
-    alerts.push({
-      id: `alert_${clientId}_welcome`,
-      clientId,
-      severity: 'info',
-      status: 'open',
-      category: 'milestone',
-      title: `${client?.company ?? 'Client'} still needs first response`,
-      description: 'The onboarding flow has not moved beyond the welcome phase.',
-      createdAt: state.lastActivity,
-    })
-  }
-
-  for (const seed of seeds) {
-    const ingest = buildIngestState(seed)
-    if (ingest.status === 'warning') {
-      alerts.push({
-        id: `alert_${seed.id}_warning`,
-        clientId,
-        seedId: seed.id,
-        severity: 'warning',
-        status: 'open',
-        category: 'ingest',
-        title: `${seed.title} needs review`,
-        description: 'Seed content is present, but the ingest pipeline has not fully stabilized yet.',
-        createdAt: seed.createdAt,
-      })
-    }
-    if (ingest.status === 'queued') {
-      alerts.push({
-        id: `alert_${seed.id}_queued`,
-        clientId,
-        seedId: seed.id,
-        severity: 'info',
-        status: 'open',
-        category: 'ingest',
-        title: `${seed.title} is queued`,
-        description: 'The ingest job is waiting for the next processing cycle.',
-        createdAt: seed.createdAt,
-      })
-    }
-  }
-
-  return alerts.sort((left, right) => {
-    const severityDelta = severityPriority[left.severity] - severityPriority[right.severity]
-    if (severityDelta !== 0) return severityDelta
-    return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
-  })
-}
-
 function getClientBundle(clientId: string): AdminClientDetailBundle | undefined {
   const client = mockClients.find((item) => item.id === clientId)
+  if (!client) return undefined
   const onboardingState = mockOnboardingStates.find((item) => item.clientId === clientId)
-  if (!client || !onboardingState) return undefined
+  if (!onboardingState) return undefined
 
   const seeds = mockAdminDataSeeds.filter((item) => item.clientId === clientId)
-  const ingestStates = seeds.map(buildIngestState)
+  const ingestStates = seeds.map((seed) => buildIngestState(seed, mockDocumentChunks))
   const documentChunks = mockDocumentChunks.filter((item) => item.clientId === clientId)
   const messages = resolveClientMessages(clientId)
 
@@ -210,7 +52,12 @@ function getClientBundle(clientId: string): AdminClientDetailBundle | undefined 
     ingestStates,
     documentChunks: structuredClone(documentChunks),
     messages,
-    alerts: buildAlertsForClient(clientId),
+    alerts: buildAlertsForClient(
+      client,
+      onboardingState,
+      seeds,
+      mockDocumentChunks,
+    ),
   }
 }
 
@@ -220,6 +67,8 @@ function resolveClientMessages(clientId: string): ThreadMessage[] {
 }
 
 export class MockApiAdapter implements ApiAdapter {
+  private messageCount = 0
+
   async getClients(): Promise<ClientSummary[]> {
     await wait(180)
     return structuredClone(mockClients)
@@ -239,10 +88,10 @@ export class MockApiAdapter implements ApiAdapter {
   async sendPortalMessage(request: ChatRequest): Promise<ChatResponse> {
     await wait(280)
 
-    messageCount++
+    this.messageCount++
     let widget_payload: WidgetPayload | undefined
 
-    if (messageCount % 5 === 0) {
+    if (this.messageCount % 5 === 0) {
       widget_payload = {
         type: 'scale',
         prompt: 'How would you rate the importance of this feature?',
@@ -252,7 +101,7 @@ export class MockApiAdapter implements ApiAdapter {
         minLabel: 'Low priority',
         maxLabel: 'Must have',
       }
-    } else if (messageCount % 3 === 0) {
+    } else if (this.messageCount % 3 === 0) {
       widget_payload = {
         type: 'choices',
         prompt: 'Which option best fits your needs?',
@@ -271,7 +120,7 @@ export class MockApiAdapter implements ApiAdapter {
         role: 'assistant',
         content: widget_payload
           ? 'Here is something for you to fill in:'
-          : `[${request.provider === 'openrouter' ? 'OpenRouter' : 'OpenAI'}] Got it! I've noted: "${request.message}". Let's keep going.`,
+          : `**Got it, ${request.message.slice(0, 30)}${request.message.length > 30 ? '…' : ''}**\n\nThanks for sharing that. Let me note this down and we'll continue building out your onboarding profile.\n\n**Next steps:**\n- Confirm your brand direction\n- Upload any existing brand assets\n- Review the timeline`,
         createdAt: new Date().toISOString(),
         widget_payload,
       },
@@ -285,8 +134,12 @@ export class MockApiAdapter implements ApiAdapter {
     await wait(120)
 
     const onboardingStates = structuredClone(mockOnboardingStates)
-    const ingestStates = mockAdminDataSeeds.map(buildIngestState)
-    const alerts = mockClients.flatMap((client) => buildAlertsForClient(client.id))
+    const ingestStates = mockAdminDataSeeds.map((seed) => buildIngestState(seed, mockDocumentChunks))
+    const alerts = mockClients.flatMap((client) => {
+      const state = mockOnboardingStates.find((s) => s.clientId === client.id)
+      const seeds = mockAdminDataSeeds.filter((s) => s.clientId === client.id)
+      return buildAlertsForClient(client, state, seeds, mockDocumentChunks)
+    })
 
     return {
       generatedAt: new Date().toISOString(),
@@ -322,7 +175,7 @@ export class MockApiAdapter implements ApiAdapter {
     await wait(150)
     const bundle = getClientBundle(clientId)
     if (!bundle) {
-      throw new Error('Client not found')
+      throw new Error(`Client ${clientId} not found or has no onboarding state`)
     }
     return structuredClone(bundle)
   }
@@ -340,12 +193,70 @@ export class MockApiAdapter implements ApiAdapter {
     const seeds = clientId
       ? mockAdminDataSeeds.filter((seed) => seed.clientId === clientId)
       : mockAdminDataSeeds
-    return structuredClone(seeds.map(buildIngestState))
+    return structuredClone(seeds.map((seed) => buildIngestState(seed, mockDocumentChunks)))
   }
 
   async getAdminAlerts(clientId?: string): Promise<AdminAlert[]> {
     await wait(120)
-    const alerts = clientId ? buildAlertsForClient(clientId) : mockClients.flatMap((client) => buildAlertsForClient(client.id))
+    const alerts = clientId
+      ? (() => {
+          const client = mockClients.find((c) => c.id === clientId)
+          if (!client) return []
+          const state = mockOnboardingStates.find((s) => s.clientId === clientId)
+          const seeds = mockAdminDataSeeds.filter((s) => s.clientId === clientId)
+          return buildAlertsForClient(client, state, seeds, mockDocumentChunks)
+        })()
+      : mockClients.flatMap((client) => {
+          const state = mockOnboardingStates.find((s) => s.clientId === client.id)
+          const seeds = mockAdminDataSeeds.filter((s) => s.clientId === client.id)
+          return buildAlertsForClient(client, state, seeds, mockDocumentChunks)
+        })
     return structuredClone(alerts)
+  }
+
+  async persistWidgetResponse(_messageId: string, _value: string | number): Promise<void> {
+    // no-op in mock mode
+  }
+
+  async uploadSeedFile(params: SeedFileUploadParams): Promise<AdminSeedRecord> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return {
+      id: Date.now().toString(),
+      clientId: params.clientId,
+      title: params.title,
+      sourceType: params.sourceType,
+      storagePath: `raw-uploads/${params.clientId}/${params.file.name}`,
+      ingestStatus: 'queued',
+      createdBy: 'mock-admin',
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  async createNoteSeed(params: SeedNoteCreateParams): Promise<AdminSeedRecord> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return {
+      id: Date.now().toString(),
+      clientId: params.clientId,
+      title: params.title,
+      sourceType: 'notes',
+      rawTranscript: params.content,
+      ingestStatus: 'queued',
+      createdBy: 'mock-admin',
+      createdAt: new Date().toISOString(),
+    }
+  }
+
+  async createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord> {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return {
+      id: Date.now().toString(),
+      clientId: params.clientId,
+      title: params.title,
+      sourceType: 'url',
+      storagePath: params.url,
+      ingestStatus: 'queued',
+      createdBy: 'mock-admin',
+      createdAt: new Date().toISOString(),
+    }
   }
 }
