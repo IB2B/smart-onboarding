@@ -11,11 +11,13 @@
         <span class="typing-dot [animation-delay:0.2s]" aria-hidden="true" />
         <span class="typing-dot [animation-delay:0.4s]" aria-hidden="true" />
       </div>
-      <span class="aura-msg-time aura-msg-time--assistant">typing...</span>
+      <span class="aura-msg-time aura-msg-time--assistant">{{ props.label }}</span>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { PhSparkle } from '@phosphor-icons/vue'
+
+const props = withDefaults(defineProps<{ label?: string }>(), { label: 'typing…' })
 </script>
