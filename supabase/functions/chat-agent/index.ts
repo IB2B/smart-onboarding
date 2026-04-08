@@ -183,6 +183,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const onboardingState: OnboardingStateRow = stateRow ?? defaultStateFor(clientId)
 
+    // Auto-create onboarding_states row on first interaction so client status
+    // transitions from 'invited' → 'active' in the admin dashboard
+    if (!stateRow) {
+      const { error: upsertError } = await supabase.from('onboarding_states').insert({
+        client_id: clientId,
+        phase: 'welcome',
+        status: 'active',
+        milestones: {},
+        collected_data: {},
+        last_activity: new Date().toISOString(),
+      })
+      if (upsertError) {
+        console.warn('Auto-create onboarding_states failed (non-fatal):', upsertError.message)
+      }
+    }
+
     // -----------------------------------------------------------------------
     // 6. Load client info
     // -----------------------------------------------------------------------

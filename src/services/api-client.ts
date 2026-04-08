@@ -97,6 +97,10 @@ class ApiClient {
   persistWidgetResponse(messageId: string, value: string | number): Promise<void> {
     return this.adapter.persistWidgetResponse(messageId, value)
   }
+
+  deleteSeed(seedId: string): Promise<void> {
+    return this.adapter.deleteSeed(seedId)
+  }
 }
 
 function createAdapter(): ApiAdapter {

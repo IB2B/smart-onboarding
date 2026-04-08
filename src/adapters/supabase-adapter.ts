@@ -497,6 +497,25 @@ export class SupabaseApiAdapter implements ApiAdapter {
     return mapSeedRow(row as Record<string, unknown>)
   }
 
+  async deleteSeed(seedId: string): Promise<void> {
+    // Fetch storage path before deletion so we can clean up the file
+    const { data: seedRow } = await supabase
+      .from('admin_data_seeds')
+      .select('storage_path')
+      .eq('id', seedId)
+      .maybeSingle()
+
+    const storagePath = (seedRow as Record<string, unknown> | null)?.['storage_path'] as string | null
+
+    const { error } = await supabase.from('admin_data_seeds').delete().eq('id', seedId)
+    if (error) throw new Error(`deleteSeed: ${error.message}`)
+
+    // Best-effort storage cleanup (skip URLs — they aren't stored as files)
+    if (storagePath && !storagePath.startsWith('http')) {
+      await supabase.storage.from('raw-uploads').remove([storagePath])
+    }
+  }
+
   async createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord> {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw new Error('createUrlSeed: not authenticated')

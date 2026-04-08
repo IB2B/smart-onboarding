@@ -259,4 +259,8 @@ export class MockApiAdapter implements ApiAdapter {
       createdAt: new Date().toISOString(),
     }
   }
+
+  async deleteSeed(_seedId: string): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
 }

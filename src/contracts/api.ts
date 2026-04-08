@@ -266,4 +266,5 @@ export interface ApiAdapter {
   uploadSeedFile(params: SeedFileUploadParams): Promise<AdminSeedRecord>
   createNoteSeed(params: SeedNoteCreateParams): Promise<AdminSeedRecord>
   createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord>
+  deleteSeed(seedId: string): Promise<void>
 }

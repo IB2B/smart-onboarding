@@ -5,18 +5,22 @@
     :icon-pack-id="store.decision.iconPackId"
     :density="store.decision.density"
     title="Admin Monitor"
-    cta-label="Invite Client"
     brand-name="IntelligentB2B"
     search-label="Search clients"
     command-symbol="Ctrl"
     command-key="K"
     :sections="sidebarSections"
-    @search="focusSearchField"
+    @search="spotlightOpen = true"
   >
     <template #sidebarFooter>
-      <ProfileDock detail="Monitoring Portal" :name="auth.userEmail ?? 'Admin'" />
+      <ProfileDock
+        detail="Monitoring Portal"
+        :name="auth.userEmail ?? 'Admin'"
+        @sign-out="handleSignOut"
+      />
     </template>
 
+    <!-- Topbar: refresh only + Invite Client CTA -->
     <template #topbarActions>
       <button
         type="button"
@@ -27,21 +31,16 @@
       >
         <PhArrowClockwise :size="16" :class="isRefreshing ? 'animate-spin' : ''" />
       </button>
+    </template>
+
+    <template #topbarCta>
       <button
         type="button"
-        class="btn btn-sm rounded-lg border-base-300 bg-base-100 text-base-content/70 hover:bg-base-200"
-        aria-label="Focus search"
-        @click="focusSearchField"
+        class="btn btn-primary admin-action-button"
+        @click="handleInvite"
       >
-        <PhMagnifyingGlass :size="16" />
-      </button>
-      <button
-        type="button"
-        class="btn btn-sm rounded-lg border-base-300 bg-base-100 text-base-content/70 hover:bg-base-200"
-        aria-label="Sign out"
-        @click="handleSignOut"
-      >
-        <PhSignOut :size="16" />
+        Invite Client
+        <PhPlus :size="16" weight="regular" />
       </button>
     </template>
 
@@ -78,35 +77,36 @@
         <!-- Clients section -->
         <div>
           <h2 class="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-base-content/35">Clients</h2>
-          <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-            <AdminClientTable
-              :clients="clients"
-              :selected-client-id="selectedClientId"
-              :loading="isLoading"
-              v-model:query="query"
-              v-model:status-filter="statusFilter"
-              v-model:sort-key="sortKey"
-              v-model:sort-direction="sortDirection"
-              @select-client="handleSelectClient"
-            />
-            <AdminClientDetailPanel
-              :client="clientDetail?.client ?? null"
-              :onboarding-state="clientDetail?.onboardingState ?? null"
-              :seeds="detailSeeds"
-              :ingest-states="detailIngestStates"
-              :alerts="detailAlerts"
-              :messages="detailMessages"
-              :loading="isLoading || isLoadingDetail"
-            />
-          </section>
-          <AdminSeedUploadCard
-            v-if="selectedClientId"
-            :client-id="selectedClientId"
-            class="mt-4"
-            @seed-created="handleSeedCreated"
+          <AdminClientCardGrid
+            :clients="clients"
+            :selected-client-id="selectedClientId"
+            :loading="isLoading"
+            v-model:query="query"
+            v-model:status-filter="statusFilter"
+            v-model:sort-key="sortKey"
+            v-model:sort-direction="sortDirection"
+            @select-client="handleSelectClient"
+            @add-seed="handleAddSeedFromCard"
           />
         </div>
       </div>
+
+      <!-- Client detail modal -->
+      <AdminClientDetailModal
+        :client="clientDetail?.client ?? null"
+        :client-id="selectedClientId"
+        :onboarding-state="clientDetail?.onboardingState ?? null"
+        :seeds="detailSeeds"
+        :ingest-states="detailIngestStates"
+        :alerts="detailAlerts"
+        :messages="detailMessages"
+        :loading="isLoadingDetail"
+        :initial-tab="modalInitialTab"
+        @close="selectedClientId = ''"
+        @seed-created="handleSeedCreated"
+        @seed-deleted="handleSeedDeleted"
+      />
+
       <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
       <ClientProvisionModal :open="provisionOpen" @close="provisionOpen = false" />
     </template>
@@ -116,20 +116,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { PhArrowClockwise, PhChartLineUp, PhChatTeardropText, PhMagnifyingGlass, PhSignOut, PhUsersThree } from '@phosphor-icons/vue'
+import {
+  PhArrowClockwise,
+  PhChartLineUp,
+  PhChatTeardropText,
+  PhPlus,
+  PhUsersThree,
+} from '@phosphor-icons/vue'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
 import { useSeedRealtime } from '@/composables/useSeedRealtime'
 import AdminAlertsCard from '@/components/admin/AdminAlertsCard.vue'
-import AdminSeedUploadCard from '@/components/admin/AdminSeedUploadCard.vue'
-import ClientProvisionModal from '@/components/admin/ClientProvisionModal.vue'
-import AdminClientDetailPanel from '@/components/admin/AdminClientDetailPanel.vue'
-import AdminClientTable, {
+import AdminClientCardGrid, {
   type SortDirection,
   type SortKey,
   type StatusFilter,
-} from '@/components/admin/AdminClientTable.vue'
+} from '@/components/admin/AdminClientCardGrid.vue'
+import AdminClientDetailModal from '@/components/admin/AdminClientDetailModal.vue'
+import ClientProvisionModal from '@/components/admin/ClientProvisionModal.vue'
 import AdminKpiStrip from '@/components/admin/AdminKpiStrip.vue'
 import AdminQuickActionsCard from '@/components/admin/AdminQuickActionsCard.vue'
 import AdminShellFrame from '@/components/admin/AdminShellFrame.vue'
@@ -158,9 +163,7 @@ const provisionOpen = ref(false)
 useHotkey({
   key: 'k',
   modifiers: ['ctrl'],
-  handler: () => {
-    spotlightOpen.value = !spotlightOpen.value
-  },
+  handler: () => { spotlightOpen.value = !spotlightOpen.value },
 })
 
 const isLoading = ref(true)
@@ -172,6 +175,7 @@ const dashboardSnapshot = ref<AdminDashboardSnapshot | null>(null)
 const clients = ref<ClientSummary[]>([])
 const selectedClientId = ref('')
 const clientDetail = ref<AdminClientDetailBundle | null>(null)
+const modalInitialTab = ref<'info' | 'seeds' | 'alerts' | 'chat'>('info')
 
 const detailSeeds = ref<AdminSeedRecord[]>([])
 const detailIngestStates = ref<AdminIngestState[]>([])
@@ -181,10 +185,10 @@ const detailMessages = ref<ThreadMessage[]>([])
 const selectedClientIdRef = computed(() => selectedClientId.value || null)
 
 useSeedRealtime(selectedClientIdRef, (seedId, ingestStatus, errorMessage) => {
-  detailSeeds.value = detailSeeds.value.map(seed =>
+  detailSeeds.value = detailSeeds.value.map((seed) =>
     seed.id === seedId ? { ...seed, ingestStatus, errorMessage: errorMessage ?? undefined } : seed,
   )
-  detailIngestStates.value = detailIngestStates.value.map(state =>
+  detailIngestStates.value = detailIngestStates.value.map((state) =>
     state.seedId === seedId
       ? {
           ...state,
@@ -209,17 +213,12 @@ const sidebarSections = computed(() => [
     title: 'Monitor',
     items: [
       { label: 'Overview', to: '/admin/monitor', active: true, icon: PhChartLineUp },
-      {
-        label: 'Clients',
-        to: '/admin/monitor',
-        icon: PhUsersThree,
-        badge: String(clients.value.length),
-      },
+      { label: 'Clients', to: '/admin/monitor', icon: PhUsersThree, badge: String(clients.value.length) },
       {
         label: 'Alerts',
         to: '/admin/monitor',
         icon: PhChatTeardropText,
-        badge: String(dashboardSnapshot.value?.alerts.filter(a => a.status === 'open').length ?? 0),
+        badge: String(dashboardSnapshot.value?.alerts.filter((a) => a.status === 'open').length ?? 0),
       },
     ],
   },
@@ -230,63 +229,37 @@ const sidebarSections = computed(() => [
 ])
 
 const clientsMap = computed<Record<string, ClientSummary>>(() =>
-  Object.fromEntries(clients.value.map(c => [c.id, c]))
+  Object.fromEntries(clients.value.map((c) => [c.id, c]))
 )
 
 const blockedCount = computed(() => dashboardSnapshot.value?.totals.blocked ?? 0)
 
 const kpiSummary = computed(() => {
   if (!dashboardSnapshot.value) {
-    return {
-      active: 0,
-      invited: 0,
-      blocked: 0,
-      completionAverage: 0,
-      staleClients: 0,
-      ingestHealth: 0,
-    }
+    return { active: 0, invited: 0, blocked: 0, completionAverage: 0, staleClients: 0, ingestHealth: 0 }
   }
-
   const ingest = dashboardSnapshot.value.ingest
   const ingestTotal = ingest.healthy + ingest.warning + ingest.failed + ingest.queued
-  const healthRatio = ingestTotal > 0 ? ingest.healthy / ingestTotal : 0
-
   return {
     active: dashboardSnapshot.value.totals.active,
     invited: dashboardSnapshot.value.totals.invited,
     blocked: dashboardSnapshot.value.totals.blocked,
     completionAverage: Math.round(dashboardSnapshot.value.completion.average),
     staleClients: dashboardSnapshot.value.freshness.stale,
-    ingestHealth: Math.round(healthRatio * 100),
+    ingestHealth: ingestTotal > 0 ? Math.round((ingest.healthy / ingestTotal) * 100) : 0,
   }
 })
 
 async function loadInitialData() {
   isLoading.value = true
   loadError.value = ''
-
   try {
     const [snapshot, clientRows] = await Promise.all([
       apiClient.getAdminDashboardSnapshot(),
       apiClient.getClients(),
     ])
-
     dashboardSnapshot.value = snapshot
     clients.value = clientRows
-
-    if (!selectedClientId.value && clientRows.length > 0) {
-      selectedClientId.value = clientRows[0]!.id
-    }
-
-    if (selectedClientId.value) {
-      await loadClientDetail(selectedClientId.value)
-    } else {
-      clientDetail.value = null
-      detailSeeds.value = []
-      detailIngestStates.value = []
-      detailAlerts.value = []
-      detailMessages.value = []
-    }
   } catch {
     loadError.value = 'Unable to load admin monitor data right now.'
   } finally {
@@ -297,7 +270,6 @@ async function loadInitialData() {
 async function loadClientDetail(clientId: string) {
   isLoadingDetail.value = true
   loadError.value = ''
-
   try {
     const [bundle, seeds, ingestStates, alerts] = await Promise.all([
       apiClient.getAdminClientDetailBundle(clientId),
@@ -305,7 +277,6 @@ async function loadClientDetail(clientId: string) {
       apiClient.getAdminIngestStates(clientId),
       apiClient.getAdminAlerts(clientId),
     ])
-
     clientDetail.value = bundle
     detailSeeds.value = seeds
     detailIngestStates.value = ingestStates
@@ -319,7 +290,14 @@ async function loadClientDetail(clientId: string) {
 }
 
 async function handleSelectClient(clientId: string) {
-  if (!clientId || clientId === selectedClientId.value) return
+  if (!clientId) return
+  modalInitialTab.value = 'info'
+  selectedClientId.value = clientId
+  await loadClientDetail(clientId)
+}
+
+async function handleAddSeedFromCard(clientId: string) {
+  modalInitialTab.value = 'seeds'
   selectedClientId.value = clientId
   await loadClientDetail(clientId)
 }
@@ -333,10 +311,6 @@ async function refreshAll() {
   }
 }
 
-function focusSearchField() {
-  spotlightOpen.value = true
-}
-
 function handleInvite(): void {
   provisionOpen.value = true
 }
@@ -345,7 +319,7 @@ async function handleSignOut(): Promise<void> {
   try {
     await auth.signOut()
   } catch {
-    // Sign-out failures are non-fatal — proceed to login regardless
+    // Non-fatal — proceed to login regardless
   }
   await router.replace({ name: 'admin-login' })
 }
@@ -361,6 +335,11 @@ function handleOpenChat(): void {
 function handleSeedCreated(seed: AdminSeedRecord): void {
   detailSeeds.value = [seed, ...detailSeeds.value]
   detailIngestStates.value = [buildIngestState(seed, []), ...detailIngestStates.value]
+}
+
+function handleSeedDeleted(seedId: string): void {
+  detailSeeds.value = detailSeeds.value.filter((s) => s.id !== seedId)
+  detailIngestStates.value = detailIngestStates.value.filter((s) => s.seedId !== seedId)
 }
 
 onMounted(loadInitialData)
