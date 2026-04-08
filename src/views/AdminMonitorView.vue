@@ -14,7 +14,7 @@
     @search="focusSearchField"
   >
     <template #sidebarFooter>
-      <ProfileDock detail="Monitoring Portal" name="Aura Admin" />
+      <ProfileDock detail="Monitoring Portal" :name="auth.userEmail ?? 'Admin'" />
     </template>
 
     <template #topbarActions>
@@ -34,6 +34,14 @@
         @click="focusSearchField"
       >
         <PhMagnifyingGlass :size="16" />
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm rounded-lg border-base-300 bg-base-100 text-base-content/70 hover:bg-base-200"
+        aria-label="Sign out"
+        @click="handleSignOut"
+      >
+        <PhSignOut :size="16" />
       </button>
     </template>
 
@@ -91,20 +99,31 @@
               :loading="isLoading || isLoadingDetail"
             />
           </section>
+          <AdminSeedUploadCard
+            v-if="selectedClientId"
+            :client-id="selectedClientId"
+            class="mt-4"
+            @seed-created="handleSeedCreated"
+          />
         </div>
       </div>
       <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
+      <ClientProvisionModal :open="provisionOpen" @close="provisionOpen = false" />
     </template>
   </AdminShellFrame>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { PhArrowClockwise, PhChartLineUp, PhChatTeardropText, PhMagnifyingGlass, PhUsersThree } from '@phosphor-icons/vue'
+import { useRouter } from 'vue-router'
+import { PhArrowClockwise, PhChartLineUp, PhChatTeardropText, PhMagnifyingGlass, PhSignOut, PhUsersThree } from '@phosphor-icons/vue'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
+import { useSeedRealtime } from '@/composables/useSeedRealtime'
 import AdminAlertsCard from '@/components/admin/AdminAlertsCard.vue'
+import AdminSeedUploadCard from '@/components/admin/AdminSeedUploadCard.vue'
+import ClientProvisionModal from '@/components/admin/ClientProvisionModal.vue'
 import AdminClientDetailPanel from '@/components/admin/AdminClientDetailPanel.vue'
 import AdminClientTable, {
   type SortDirection,
@@ -124,12 +143,17 @@ import type {
   ClientSummary,
   ThreadMessage,
 } from '@/contracts/api'
+import { buildIngestState } from '@/adapters/derive'
 import { apiClient } from '@/services/api-client'
 import { useSpecLabStore } from '@/stores/spec-lab'
+import { useAuthStore } from '@/stores/auth'
 
 const store = useSpecLabStore()
+const auth = useAuthStore()
+const router = useRouter()
 
 const spotlightOpen = ref(false)
+const provisionOpen = ref(false)
 
 useHotkey({
   key: 'k',
@@ -153,6 +177,27 @@ const detailSeeds = ref<AdminSeedRecord[]>([])
 const detailIngestStates = ref<AdminIngestState[]>([])
 const detailAlerts = ref<AdminAlert[]>([])
 const detailMessages = ref<ThreadMessage[]>([])
+
+const selectedClientIdRef = computed(() => selectedClientId.value || null)
+
+useSeedRealtime(selectedClientIdRef, (seedId, ingestStatus, errorMessage) => {
+  detailSeeds.value = detailSeeds.value.map(seed =>
+    seed.id === seedId ? { ...seed, ingestStatus, errorMessage: errorMessage ?? undefined } : seed,
+  )
+  detailIngestStates.value = detailIngestStates.value.map(state =>
+    state.seedId === seedId
+      ? {
+          ...state,
+          status: ingestStatus,
+          note:
+            ingestStatus === 'ready' ? 'Summary ready for replay'
+            : ingestStatus === 'processing' ? 'Chunking in progress'
+            : ingestStatus === 'queued' ? 'Waiting for ingestion'
+            : errorMessage ?? 'Needs review before use',
+        }
+      : state,
+  )
+})
 
 const query = ref('')
 const statusFilter = ref<StatusFilter>('all')
@@ -293,7 +338,16 @@ function focusSearchField() {
 }
 
 function handleInvite(): void {
-  // TODO: open invite modal / navigate to invite flow
+  provisionOpen.value = true
+}
+
+async function handleSignOut(): Promise<void> {
+  try {
+    await auth.signOut()
+  } catch {
+    // Sign-out failures are non-fatal — proceed to login regardless
+  }
+  await router.replace({ name: 'admin-login' })
 }
 
 function handleReviewBlocked(): void {
@@ -302,6 +356,11 @@ function handleReviewBlocked(): void {
 
 function handleOpenChat(): void {
   // TODO: navigate to portal chat
+}
+
+function handleSeedCreated(seed: AdminSeedRecord): void {
+  detailSeeds.value = [seed, ...detailSeeds.value]
+  detailIngestStates.value = [buildIngestState(seed, []), ...detailIngestStates.value]
 }
 
 onMounted(loadInitialData)
