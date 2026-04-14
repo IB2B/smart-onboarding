@@ -6,7 +6,8 @@
         <AuraLogo />
       </div>
 
-      <div class="card bg-base-100 shadow-sm border border-base-300/60">
+      <!-- ── Login form ───────────────────────────────────────────────── -->
+      <div v-if="mode === 'login'" class="card bg-base-100 shadow-sm border border-base-300/60">
         <div class="card-body gap-5">
           <div>
             <h1 class="text-lg font-semibold text-base-content">Admin Portal</h1>
@@ -68,6 +69,88 @@
           </form>
         </div>
       </div>
+
+      <!-- ── Set new password form ────────────────────────────────────── -->
+      <div v-else class="card bg-base-100 shadow-sm border border-base-300/60">
+        <div class="card-body gap-5">
+          <div class="flex items-center gap-2">
+            <PhLockKey :size="20" class="text-primary shrink-0" aria-hidden="true" />
+            <div>
+              <h1 class="text-lg font-semibold text-base-content">Set New Password</h1>
+              <p class="text-sm text-base-content/55 mt-0.5">Choose a strong password for your account</p>
+            </div>
+          </div>
+
+          <form @submit.prevent="handleSetPassword" class="flex flex-col gap-4">
+            <!-- New password field -->
+            <label class="form-control">
+              <div class="label pb-1">
+                <span class="label-text text-xs font-medium">New Password</span>
+              </div>
+              <input
+                v-model="newPassword"
+                type="password"
+                required
+                minlength="8"
+                autocomplete="new-password"
+                placeholder="Min. 8 characters"
+                :disabled="resetLoading"
+                class="input input-bordered input-sm w-full"
+              />
+            </label>
+
+            <!-- Confirm password field -->
+            <label class="form-control">
+              <div class="label pb-1">
+                <span class="label-text text-xs font-medium">Confirm Password</span>
+              </div>
+              <input
+                v-model="confirmPassword"
+                type="password"
+                required
+                minlength="8"
+                autocomplete="new-password"
+                placeholder="Re-enter your new password"
+                :disabled="resetLoading"
+                class="input input-bordered input-sm w-full"
+              />
+            </label>
+
+            <!-- Error alert -->
+            <div v-if="resetError" role="alert" class="alert alert-error py-2 text-sm">
+              <PhWarning :size="16" aria-hidden="true" />
+              <span>{{ resetError }}</span>
+            </div>
+
+            <!-- Success alert -->
+            <div v-if="resetSuccess" role="alert" class="alert alert-success py-2 text-sm">
+              <span>Password updated. Redirecting…</span>
+            </div>
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              :disabled="resetLoading || !newPassword || !confirmPassword"
+              class="btn btn-primary btn-sm w-full"
+            >
+              <span
+                v-if="resetLoading"
+                class="loading loading-spinner loading-xs"
+                aria-hidden="true"
+              ></span>
+              {{ resetLoading ? 'Saving…' : 'Set Password' }}
+            </button>
+          </form>
+
+          <button
+            type="button"
+            class="text-sm text-base-content/55 hover:text-base-content transition-colors text-left"
+            @click="mode = 'login'"
+          >
+            ← Back to sign in
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -75,27 +158,49 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { PhWarning } from '@phosphor-icons/vue'
+import { PhWarning, PhLockKey } from '@phosphor-icons/vue'
 import AuraLogo from '@/components/system/AuraLogo.vue'
 import { useAuthStore } from '@/stores/auth'
+import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
 const auth = useAuthStore()
 
+// ── Login form state ──────────────────────────────────────────────────────────
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 
-// If already authenticated as admin, redirect immediately
+// ── Mode ──────────────────────────────────────────────────────────────────────
+const mode = ref<'login' | 'set-password'>('login')
+
+// ── Set-password form state ───────────────────────────────────────────────────
+const newPassword = ref('')
+const confirmPassword = ref('')
+const resetLoading = ref(false)
+const resetError = ref('')
+const resetSuccess = ref(false)
+
+// ── onMounted ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
+  const hash = window.location.hash
+  if (hash.includes('type=recovery')) {
+    // Supabase has already exchanged the hash for a session via detectSessionInUrl
+    await auth.init()
+    mode.value = 'set-password'
+    return
+  }
+
+  // Normal login page — redirect if already authenticated admin
   await auth.init()
   if (auth.isAuthenticated && auth.isAdmin) {
     await router.replace({ name: 'admin-monitor' })
   }
 })
 
-async function handleSubmit() {
+// ── Handlers ──────────────────────────────────────────────────────────────────
+async function handleSubmit(): Promise<void> {
   errorMessage.value = ''
   loading.value = true
   try {
@@ -106,6 +211,33 @@ async function handleSubmit() {
     errorMessage.value = 'Sign in failed. Please check your credentials and try again.'
   } finally {
     loading.value = false
+  }
+}
+
+async function handleSetPassword(): Promise<void> {
+  resetError.value = ''
+
+  if (newPassword.value !== confirmPassword.value) {
+    resetError.value = 'Passwords do not match. Please try again.'
+    return
+  }
+
+  if (newPassword.value.length < 8) {
+    resetError.value = 'Password must be at least 8 characters.'
+    return
+  }
+
+  resetLoading.value = true
+  try {
+    const { error } = await supabase.auth.updateUser({ password: newPassword.value })
+    if (error) throw error
+    resetSuccess.value = true
+    await router.replace({ name: 'admin-monitor' })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to update password. Please try again.'
+    resetError.value = message
+  } finally {
+    resetLoading.value = false
   }
 }
 </script>

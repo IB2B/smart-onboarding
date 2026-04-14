@@ -221,11 +221,12 @@ import {
   PhBellSlash,
   PhChartLineUp,
   PhChatTeardropText,
+  PhInfo,
   PhMagnifyingGlass,
+  PhUserCircle,
   PhUsersThree,
   PhWarning,
   PhXCircle,
-  PhInfo,
 } from '@phosphor-icons/vue'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
@@ -277,6 +278,10 @@ const sidebarSections = computed(() => [
   {
     title: 'Portal',
     items: [{ label: 'Client Chat', to: '/portal/chat/demo-token', icon: PhChatTeardropText }],
+  },
+  {
+    title: 'Account',
+    items: [{ label: 'Account', to: '/admin/account', icon: PhUserCircle }],
   },
 ])
 

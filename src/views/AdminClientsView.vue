@@ -82,6 +82,7 @@ import {
   PhChartLineUp,
   PhChatTeardropText,
   PhPlus,
+  PhUserCircle,
   PhUsersThree,
 } from '@phosphor-icons/vue'
 
@@ -135,6 +136,10 @@ const sidebarSections = computed(() => [
   {
     title: 'Portal',
     items: [{ label: 'Client Chat', to: '/portal/chat/demo-token', icon: PhChatTeardropText }],
+  },
+  {
+    title: 'Account',
+    items: [{ label: 'Account', to: '/admin/account', icon: PhUserCircle }],
   },
 ])
 
