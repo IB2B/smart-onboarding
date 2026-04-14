@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AdminLoginView from '@/views/AdminLoginView.vue'
 import PortalLoginView from '@/views/PortalLoginView.vue'
 import AdminMonitorView from '@/views/AdminMonitorView.vue'
+import AdminClientsView from '@/views/AdminClientsView.vue'
+import AdminClientDetailView from '@/views/AdminClientDetailView.vue'
 import ClientChatView from '@/views/ClientChatView.vue'
 import ClientResumeView from '@/views/ClientResumeView.vue'
 import PortalAuthCallback from '@/views/PortalAuthCallback.vue'
@@ -39,6 +41,18 @@ const router = createRouter({
       path: '/admin/monitor',
       name: 'admin-monitor',
       component: AdminMonitorView,
+      meta: { requiresRole: 'admin' },
+    },
+    {
+      path: '/admin/clients',
+      name: 'admin-clients',
+      component: AdminClientsView,
+      meta: { requiresRole: 'admin' },
+    },
+    {
+      path: '/admin/clients/:id',
+      name: 'admin-client-detail',
+      component: AdminClientDetailView,
       meta: { requiresRole: 'admin' },
     },
     {

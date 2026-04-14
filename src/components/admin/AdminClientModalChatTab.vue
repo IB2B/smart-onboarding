@@ -12,7 +12,7 @@
     </div>
 
     <!-- Messages -->
-    <div ref="scrollContainer" class="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+    <div ref="scrollContainer" class="space-y-3 overflow-y-auto pr-1" :class="fullPage ? 'max-h-[calc(100vh-22rem)]' : 'max-h-[50vh]'">
       <template v-if="localMessages.length > 0">
         <ThreadBlock
           v-for="message in localMessages"
@@ -35,6 +35,7 @@ import type { ThreadMessage } from '@/contracts/api'
 const props = defineProps<{
   messages: ThreadMessage[]
   clientId: string
+  fullPage?: boolean
 }>()
 
 // Local copy that grows with realtime inserts
