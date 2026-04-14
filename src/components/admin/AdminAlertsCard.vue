@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { PhInfo, PhWarningCircle, PhXCircle } from '@phosphor-icons/vue'
 import type { AdminAlert, ClientSummary } from '@/contracts/api'
 
@@ -8,6 +9,8 @@ const props = defineProps<{
   clientsMap: Record<string, ClientSummary>
   loading?: boolean
 }>()
+
+const router = useRouter()
 
 const SEVERITY_ORDER: Record<AdminAlert['severity'], number> = { critical: 0, warning: 1, info: 2 }
 
@@ -99,6 +102,7 @@ function severityBadgeClass(severity: AdminAlert['severity']): string {
       <button
         type="button"
         class="text-xs text-base-content/50 transition-colors hover:text-base-content/80"
+        @click="router.push({ name: 'admin-alerts' })"
       >
         View all {{ openAlerts.length }} open alerts →
       </button>

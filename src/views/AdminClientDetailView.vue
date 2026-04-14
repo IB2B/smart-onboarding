@@ -1,4 +1,5 @@
 <template>
+  <div :data-theme="store.decision.themeId" class="contents">
   <AdminShellFrame
     :theme="store.decision.themeId"
     :font-pair-id="store.decision.fontPairId"
@@ -164,6 +165,7 @@
   </AdminShellFrame>
 
   <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -171,6 +173,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PhArrowLeft,
+  PhBell,
   PhChartLineUp,
   PhChatTeardropText,
   PhPlus,
@@ -268,7 +271,7 @@ const sidebarSections = computed(() => [
     items: [
       { label: 'Overview', to: '/admin/monitor', icon: PhChartLineUp },
       { label: 'Clients', to: '/admin/clients', active: true, icon: PhUsersThree },
-      { label: 'Alerts', to: '/admin/monitor', icon: PhChatTeardropText },
+      { label: 'Alerts', to: '/admin/alerts', icon: PhBell },
     ],
   },
   {

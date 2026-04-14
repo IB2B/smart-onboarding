@@ -1,4 +1,5 @@
 <template>
+  <div :data-theme="store.decision.themeId" class="contents">
   <AdminShellFrame
     :theme="store.decision.themeId"
     :font-pair-id="store.decision.fontPairId"
@@ -78,6 +79,7 @@
 
   <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
   <ClientProvisionModal :open="provisionOpen" @close="provisionOpen = false" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -85,6 +87,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   PhArrowClockwise,
+  PhBell,
   PhChartLineUp,
   PhChatTeardropText,
   PhPlus,
@@ -132,8 +135,8 @@ const sidebarSections = computed(() => [
       { label: 'Clients', to: '/admin/clients', icon: PhUsersThree, badge: String(clients.value.length) },
       {
         label: 'Alerts',
-        to: '/admin/monitor',
-        icon: PhChatTeardropText,
+        to: '/admin/alerts',
+        icon: PhBell,
         badge: String(dashboardSnapshot.value?.alerts.filter((a) => a.status === 'open').length ?? 0),
       },
     ],

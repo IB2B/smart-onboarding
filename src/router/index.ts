@@ -5,6 +5,7 @@ import PortalLoginView from '@/views/PortalLoginView.vue'
 import AdminMonitorView from '@/views/AdminMonitorView.vue'
 import AdminClientsView from '@/views/AdminClientsView.vue'
 import AdminClientDetailView from '@/views/AdminClientDetailView.vue'
+import AdminAlertsView from '@/views/AdminAlertsView.vue'
 import ClientChatView from '@/views/ClientChatView.vue'
 import ClientResumeView from '@/views/ClientResumeView.vue'
 import PortalAuthCallback from '@/views/PortalAuthCallback.vue'
@@ -53,6 +54,12 @@ const router = createRouter({
       path: '/admin/clients/:id',
       name: 'admin-client-detail',
       component: AdminClientDetailView,
+      meta: { requiresRole: 'admin' },
+    },
+    {
+      path: '/admin/alerts',
+      name: 'admin-alerts',
+      component: AdminAlertsView,
       meta: { requiresRole: 'admin' },
     },
     {
