@@ -203,10 +203,26 @@ export async function executeTool(
       .filter((key) => updatedMilestones[key]?.status !== 'complete')
       .map((key) => key.replace(/_/g, ' '))
 
+    // Fire-and-forget brief generation when all milestones are done
+    if (newPhase === 'review') {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      if (supabaseUrl && serviceKey) {
+        fetch(`${supabaseUrl}/functions/v1/generate-brief`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ clientId }),
+        }).catch(() => undefined)
+      }
+    }
+
     return {
       toolCallId: toolCall.id,
       result: `Milestone "${milestone}" marked complete. Phase is now "${newPhase}".`,
-      snapshotDelta: { pendingItems },
+      snapshotDelta: { pendingItems, phase: newPhase, milestones: updatedMilestones },
     }
   }
 

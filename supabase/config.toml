@@ -366,6 +366,10 @@ allow_dynamic_registration = false
 # Disable gateway-level verification to support ES256 algorithm (newer Supabase projects).
 verify_jwt = false
 
+[functions.generate-brief]
+# Called internally from chat-agent using the service role key — no user JWT present.
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
