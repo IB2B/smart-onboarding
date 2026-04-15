@@ -118,15 +118,14 @@ export function buildConversationMessages(
 
   for (const msg of history) {
     const role = roleMap[msg.role] ?? 'user'
-    const entry: LlmMessage = { role, content: msg.content }
 
-    // Preserve tool_calls on assistant messages so the model can see its own
-    // prior tool invocations when continuing a multi-turn conversation.
-    if (role === 'assistant' && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) {
-      entry.tool_calls = msg.tool_calls as LlmMessage['tool_calls']
-    }
-
-    messages.push(entry)
+    // Do NOT include tool_calls on assistant history messages. The API requires
+    // each tool_call_id to be immediately followed by a tool result message, but
+    // we only persist the final assistant text — not the intermediate tool turns.
+    // The DB state (phase, milestones) already reflects all prior tool executions;
+    // the system prompt surfaces that, so the model has full context without the
+    // raw tool mechanics.
+    messages.push({ role, content: msg.content ?? '' })
   }
 
   messages.push({ role: 'user', content: currentMessage })
