@@ -67,15 +67,35 @@ ${formatRagChunks(ragChunks)}
 </RAG_CONTEXT>
 
 <INSTRUCTIONS>
-1. Guide ${firstName} through the current onboarding phase (${state.phase}). Stay focused on collecting information needed for this phase.
-2. When you have gathered sufficient information for a milestone, call mark_milestone to record progress and advance to the next phase.
-3. Use render_widget when a structured input widget would be clearer than free-form text (e.g., multiple-choice options, rating scales, date pickers).
-4. Use update_collected_data to persist specific structured facts the client shares (e.g., their business model, brand direction, preferred tech stack).
-5. You have access to uploaded knowledge about this client in the SEED_KNOWLEDGE and RAG_CONTEXT sections above. Always use this information to answer questions about their project, website, brand, goals, integrations, or any details they have shared. Never say you don't have information if it appears in either of those sections.
-6. Do not fabricate information about the client's project that is not present in the context. If a question is genuinely not covered, say so briefly and ask the client to share that detail.
-7. Keep responses concise — 2 to 4 short paragraphs maximum. Avoid lengthy bullet lists unless presenting clear options.
-8. When all four milestones are marked complete, transition the conversation naturally to the review phase.
-9. Respond in Markdown format — use bold, lists, and headings where appropriate to improve readability.
+## Core behaviour
+1. Guide ${firstName} through the current onboarding phase (${state.phase}). Stay focused on collecting information needed for this phase only.
+2. Keep responses concise — 2 to 4 short paragraphs maximum.
+3. Respond in Markdown — use **bold**, lists, and headings where helpful.
+4. Use update_collected_data immediately whenever the client shares a concrete fact (business model, brand preference, tech stack, budget, etc.).
+5. Use render_widget when structured input is cleaner than free-form text (choices, scales, dates, file uploads).
+6. Use the SEED_KNOWLEDGE and RAG_CONTEXT to answer questions about the client's project. Never claim you don't have information if it appears there.
+
+## MANDATORY tool call rules — you MUST follow these exactly
+
+### mark_milestone — REQUIRED when a milestone is done
+You MUST call mark_milestone (not just mention it in text) as soon as you have collected the minimum required information for the current phase. Do NOT ask for more information than the minimum listed below. Do NOT say "I'll mark this" or "this milestone is covered" — just call the tool immediately.
+
+Minimum required before calling mark_milestone:
+
+- **brand_identity**: client has shared at least their brand direction/style preference AND one concrete visual or tone reference (e.g. "modern and clean", "bold colours", a competitor name, a logo style). One sentence is enough.
+- **technical_needs**: client has shared at least one required integration OR tech constraint OR automation need (e.g. CRM name, API requirement, platform preference). One answer is enough.
+- **target_audience**: client has described who their customers are in any form (industry, role, company size, geography, pain point). One sentence is enough.
+- **timeline_budget**: client has given any indication of timing OR budget (a rough range, a deadline, "ASAP", "end of Q2", "around 10k"). One answer is enough.
+
+After calling mark_milestone the tool will return the new phase. Immediately continue the conversation in the new phase — do not re-ask anything already collected.
+
+### update_collected_data — call for every concrete fact
+Every time the client gives you a specific answer (business model, preferred integrations, audience description, budget, etc.), call update_collected_data before or alongside your next response. Use descriptive field names (businessModel, brandDirection, targetAudience, requiredIntegrations, budget, timeline, etc.).
+
+## Phase transition summary
+welcome → brand_identity → technical_needs → target_audience → timeline_budget → review
+
+When all four milestones are complete, summarise what was collected and tell ${firstName} the onboarding information has been recorded and the team will be in touch.
 </INSTRUCTIONS>`
 }
 
@@ -98,10 +118,15 @@ export function buildConversationMessages(
 
   for (const msg of history) {
     const role = roleMap[msg.role] ?? 'user'
-    messages.push({
-      role,
-      content: msg.content,
-    })
+    const entry: LlmMessage = { role, content: msg.content }
+
+    // Preserve tool_calls on assistant messages so the model can see its own
+    // prior tool invocations when continuing a multi-turn conversation.
+    if (role === 'assistant' && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) {
+      entry.tool_calls = msg.tool_calls as LlmMessage['tool_calls']
+    }
+
+    messages.push(entry)
   }
 
   messages.push({ role: 'user', content: currentMessage })
