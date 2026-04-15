@@ -69,28 +69,43 @@ function buildClientFromRow(
   return { client, mappedState }
 }
 
-function extractEmbeddedState(clientRow: Record<string, unknown>): Record<string, unknown> | null {
-  const embedded = (clientRow as Record<string, unknown>)['onboarding_states']
-  if (!Array.isArray(embedded) || embedded.length === 0) return null
-  return (embedded[0] as Record<string, unknown>) ?? null
+// Fetch all clients + their onboarding states in two explicit queries, then
+// join in JS. This is more reliable than the embedded-join syntax
+// (`select('*, onboarding_states(*)')`) which silently returns empty arrays
+// when the FK relationship is not registered in the Supabase schema cache.
+async function fetchClientsWithStates(): Promise<
+  Array<{ clientRow: Record<string, unknown>; stateRow: Record<string, unknown> | null }>
+> {
+  const [clientsResult, statesResult] = await Promise.all([
+    supabase.from('clients').select('*').order('created_at', { ascending: false }),
+    supabase.from('onboarding_states').select('*'),
+  ])
+
+  if (clientsResult.error) throw new Error(`fetchClientsWithStates (clients): ${clientsResult.error.message}`)
+  if (statesResult.error) throw new Error(`fetchClientsWithStates (states): ${statesResult.error.message}`)
+
+  const statesById = new Map<string, Record<string, unknown>>(
+    (statesResult.data ?? []).map((row) => [
+      (row as Record<string, unknown>)['client_id'] as string,
+      row as Record<string, unknown>,
+    ]),
+  )
+
+  return (clientsResult.data ?? []).map((row) => {
+    const clientRow = row as Record<string, unknown>
+    return {
+      clientRow,
+      stateRow: statesById.get(clientRow['id'] as string) ?? null,
+    }
+  })
 }
 
 // ── Adapter ──────────────────────────────────────────────────────────────────
 
 export class SupabaseApiAdapter implements ApiAdapter {
   async getClients(): Promise<ClientSummary[]> {
-    // TODO(phase-3): add server-side pagination — unbounded query will degrade at scale
-    const { data, error } = await supabase.from('clients').select('*, onboarding_states(*)')
-
-    if (error) throw new Error(`getClients: ${error.message}`)
-    if (!data) return []
-
-    return data.map((row) => {
-      const clientRow = row as Record<string, unknown>
-      const stateRow = extractEmbeddedState(clientRow)
-      const { client } = buildClientFromRow(clientRow, stateRow)
-      return client
-    })
+    const rows = await fetchClientsWithStates()
+    return rows.map(({ clientRow, stateRow }) => buildClientFromRow(clientRow, stateRow).client)
   }
 
   async getClientThread(clientId: string): Promise<ThreadMessage[]> {
@@ -213,26 +228,23 @@ export class SupabaseApiAdapter implements ApiAdapter {
 
   async getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot> {
     // TODO(phase-3): add server-side pagination — document_chunks can be very large at scale
-    const [clientsResult, seedsResult, chunksResult] = await Promise.all([
-      supabase.from('clients').select('*, onboarding_states(*)'),
+    const [clientsWithStates, seedsResult, chunksResult] = await Promise.all([
+      fetchClientsWithStates(),
       supabase.from('admin_data_seeds').select('*'),
       supabase
         .from('document_chunks')
         .select('id, seed_id, client_id, chunk_index, metadata, content, created_at'),
     ])
 
-    if (clientsResult.error) throw new Error(`getAdminDashboardSnapshot (clients): ${clientsResult.error.message}`)
     if (seedsResult.error) throw new Error(`getAdminDashboardSnapshot (seeds): ${seedsResult.error.message}`)
     if (chunksResult.error) throw new Error(`getAdminDashboardSnapshot (chunks): ${chunksResult.error.message}`)
 
     const seeds = (seedsResult.data ?? []).map((row) => mapSeedRow(row as Record<string, unknown>))
     const chunks = (chunksResult.data ?? []).map((row) => mapChunkRow(row as Record<string, unknown>))
 
-    const clientEntries = (clientsResult.data ?? []).map((row) => {
-      const clientRow = row as Record<string, unknown>
-      const stateRow = extractEmbeddedState(clientRow)
-      return buildClientFromRow(clientRow, stateRow)
-    })
+    const clientEntries = clientsWithStates.map(({ clientRow, stateRow }) =>
+      buildClientFromRow(clientRow, stateRow),
+    )
 
     const clients = clientEntries.map((e) => e.client)
     const mappedStates = clientEntries.map((e) => e.mappedState).filter((s): s is OnboardingState => s !== null)
@@ -411,25 +423,22 @@ export class SupabaseApiAdapter implements ApiAdapter {
     }
 
     // TODO(phase-3): add server-side pagination — unbounded query will degrade at scale
-    const [clientsResult, seedsResult, chunksResult] = await Promise.all([
-      supabase.from('clients').select('*, onboarding_states(*)'),
+    const [clientsWithStates, seedsResult, chunksResult] = await Promise.all([
+      fetchClientsWithStates(),
       supabase.from('admin_data_seeds').select('*'),
       supabase
         .from('document_chunks')
         .select('id, seed_id, client_id, chunk_index, metadata, content, created_at'),
     ])
 
-    if (clientsResult.error) throw new Error(`getAdminAlerts (clients): ${clientsResult.error.message}`)
     if (seedsResult.error) throw new Error(`getAdminAlerts (seeds): ${seedsResult.error.message}`)
     if (chunksResult.error) throw new Error(`getAdminAlerts (chunks): ${chunksResult.error.message}`)
 
     const seeds = (seedsResult.data ?? []).map((row) => mapSeedRow(row as Record<string, unknown>))
     const chunks = (chunksResult.data ?? []).map((row) => mapChunkRow(row as Record<string, unknown>))
 
-    return (clientsResult.data ?? [])
-      .flatMap((row) => {
-        const clientRow = row as Record<string, unknown>
-        const stateRow = extractEmbeddedState(clientRow)
+    return clientsWithStates
+      .flatMap(({ clientRow, stateRow }) => {
         const { client, mappedState } = buildClientFromRow(clientRow, stateRow)
         const clientSeeds = seeds.filter((s) => s.clientId === client.id)
         return buildAlertsForClient(client, mappedState ?? undefined, clientSeeds, chunks)

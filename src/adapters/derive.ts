@@ -37,14 +37,22 @@ export function getHoursSince(timestamp: string): number {
   return Number.POSITIVE_INFINITY
 }
 
+// Fixed 4-milestone denominator — prevents "100%" when only one milestone
+// key happens to be present in the DB object.
+const MILESTONE_KEYS = [
+  'brand_identity',
+  'technical_needs',
+  'target_audience',
+  'timeline_budget',
+] as const
+
 export function getMilestoneCompletion(state: OnboardingState): number {
-  const entries = Object.values(state.milestones)
-  if (!entries.length) return 0
-  const total = entries.reduce((sum, milestone) => {
-    const weight = milestoneCompletionWeight[milestone.status] ?? 0
+  const total = MILESTONE_KEYS.reduce((sum, key) => {
+    const milestone = state.milestones[key]
+    const weight = milestoneCompletionWeight[milestone?.status ?? 'pending'] ?? 0
     return sum + weight
   }, 0)
-  return Math.round((total / entries.length) * 100)
+  return Math.round((total / MILESTONE_KEYS.length) * 100)
 }
 
 export function deriveIngestStatus(

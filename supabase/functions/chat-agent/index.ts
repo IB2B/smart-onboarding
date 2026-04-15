@@ -43,7 +43,13 @@ function defaultStateFor(clientId: string): OnboardingStateRow {
     id: '',
     client_id: clientId,
     phase: 'welcome',
-    milestones: {},
+    // Pre-populate all milestone keys so progress calculation always divides by 4
+    milestones: {
+      brand_identity: { status: 'pending', data: {} },
+      technical_needs: { status: 'pending', data: {} },
+      target_audience: { status: 'pending', data: {} },
+      timeline_budget: { status: 'pending', data: {} },
+    },
     collected_data: {},
     status: 'active',
     last_activity: new Date().toISOString(),
@@ -190,7 +196,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
         client_id: clientId,
         phase: 'welcome',
         status: 'active',
-        milestones: {},
+        // Pre-populate all keys so progress is always out of 4 from day one
+        milestones: {
+          brand_identity: { status: 'pending', data: {} },
+          technical_needs: { status: 'pending', data: {} },
+          target_audience: { status: 'pending', data: {} },
+          timeline_budget: { status: 'pending', data: {} },
+        },
         collected_data: {},
         last_activity: new Date().toISOString(),
       })
@@ -328,7 +340,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         llmResponse = await callLlm({
           messages: llmMessages,
           tools: TOOL_DEFINITIONS,
-          provider,
+          provider: resolvedProvider, // must use resolved provider, not raw request value
           maxTokens: 1024,
         })
       }
