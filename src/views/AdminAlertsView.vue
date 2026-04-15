@@ -194,7 +194,7 @@
                 <td class="px-5 py-3.5">
                   <span
                     class="badge badge-sm rounded-full border-0"
-                    :class="alert.status === 'open' ? 'bg-error/15 text-error-content' : 'bg-base-200 text-base-content/50'"
+                    :class="alert.status === 'open' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500'"
                   >
                     {{ alert.status === 'open' ? 'Open' : 'Resolved' }}
                   </span>
@@ -315,30 +315,30 @@ const summaryChips = computed(() => [
   {
     label: 'Total Open',
     count: openAlerts.value.length,
-    colorClass: 'text-base-content',
-    labelClass: 'text-base-content/50',
-    borderClass: 'border-l-4 border-l-base-content/20',
+    colorClass: 'text-slate-800 dark:text-slate-100',
+    labelClass: 'text-slate-500',
+    borderClass: 'border-l-4 border-l-slate-300',
   },
   {
     label: 'Critical',
     count: openAlerts.value.filter((a) => a.severity === 'critical').length,
-    colorClass: 'text-error',
-    labelClass: 'text-error/70',
-    borderClass: 'border-l-4 border-l-error',
+    colorClass: 'text-red-600',
+    labelClass: 'text-red-500',
+    borderClass: 'border-l-4 border-l-red-500',
   },
   {
     label: 'Warning',
     count: openAlerts.value.filter((a) => a.severity === 'warning').length,
-    colorClass: 'text-warning',
-    labelClass: 'text-warning/70',
-    borderClass: 'border-l-4 border-l-warning',
+    colorClass: 'text-amber-500',
+    labelClass: 'text-amber-500',
+    borderClass: 'border-l-4 border-l-amber-400',
   },
   {
     label: 'Info',
     count: openAlerts.value.filter((a) => a.severity === 'info').length,
-    colorClass: 'text-info',
-    labelClass: 'text-info/70',
-    borderClass: 'border-l-4 border-l-info',
+    colorClass: 'text-blue-500',
+    labelClass: 'text-blue-400',
+    borderClass: 'border-l-4 border-l-blue-400',
   },
 ])
 
@@ -346,9 +346,9 @@ const summaryChips = computed(() => [
 
 const severityPills: { value: SeverityFilter; label: string; activeClass: string }[] = [
   { value: 'all', label: 'All', activeClass: 'bg-primary/20 text-primary' },
-  { value: 'critical', label: 'Critical', activeClass: 'bg-error/20 text-error' },
-  { value: 'warning', label: 'Warning', activeClass: 'bg-warning/20 text-warning' },
-  { value: 'info', label: 'Info', activeClass: 'bg-info/20 text-info' },
+  { value: 'critical', label: 'Critical', activeClass: 'bg-red-100 text-red-600' },
+  { value: 'warning', label: 'Warning', activeClass: 'bg-amber-100 text-amber-600' },
+  { value: 'info', label: 'Info', activeClass: 'bg-blue-100 text-blue-600' },
 ]
 
 const statusOptions: { value: StatusFilter; label: string }[] = [
@@ -391,9 +391,9 @@ function severityIcon(severity: AlertSeverity) {
 }
 
 function severityTextClass(severity: AlertSeverity): string {
-  if (severity === 'critical') return 'text-error'
-  if (severity === 'warning') return 'text-warning'
-  return 'text-info'
+  if (severity === 'critical') return 'text-red-600'
+  if (severity === 'warning') return 'text-amber-500'
+  return 'text-blue-500'
 }
 
 function categoryLabel(category: AdminAlert['category']): string {
@@ -409,11 +409,11 @@ function categoryLabel(category: AdminAlert['category']): string {
 
 function categoryBadgeClass(category: AdminAlert['category']): string {
   const classes: Record<AdminAlert['category'], string> = {
-    stale: 'bg-warning/20 text-warning',
-    ingest: 'bg-info/20 text-info',
-    milestone: 'bg-primary/20 text-primary',
-    message: 'bg-success/20 text-success-content',
-    ops: 'bg-base-300 text-base-content/70',
+    stale: 'bg-amber-100 text-amber-700',
+    ingest: 'bg-blue-100 text-blue-700',
+    milestone: 'bg-violet-100 text-violet-700',
+    message: 'bg-emerald-100 text-emerald-700',
+    ops: 'bg-slate-100 text-slate-600',
   }
   return classes[category]
 }
