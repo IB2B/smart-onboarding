@@ -34,6 +34,7 @@ const adapterMocks = vi.hoisted(() => ({
       requiredIntegrations: [],
       pendingItems: [],
     },
+    onboardingState: null,
   })),
   sendPortalMessage: vi.fn(async (request: { requestId: string; provider: string; message: string }) => ({
     sessionId: 'session-1',
@@ -100,6 +101,7 @@ const adapterMocks = vi.hoisted(() => ({
     documentChunks: [],
     messages: [],
     alerts: [],
+    briefs: [],
   })),
   getAdminSeedRecords: vi.fn(async (clientId?: string): Promise<AdminSeedRecord[]> => [
     {

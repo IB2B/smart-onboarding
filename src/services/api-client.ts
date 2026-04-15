@@ -7,6 +7,7 @@ import type {
   AiProvider,
   ApiAdapter,
   ChatRequest,
+  OnboardingBrief,
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
@@ -100,6 +101,18 @@ class ApiClient {
 
   deleteSeed(seedId: string): Promise<void> {
     return this.adapter.deleteSeed(seedId)
+  }
+
+  getClientBriefs(clientId: string): Promise<OnboardingBrief[]> {
+    return this.adapter.getClientBriefs(clientId)
+  }
+
+  approveBrief(briefId: string): Promise<void> {
+    return this.adapter.approveBrief(briefId)
+  }
+
+  completeOnboarding(clientId: string): Promise<void> {
+    return this.adapter.completeOnboarding(clientId)
   }
 }
 
