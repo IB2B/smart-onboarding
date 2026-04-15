@@ -1,5 +1,5 @@
 <template>
-  <section class="rounded-2xl border border-base-300/80 bg-base-100">
+  <section class="rounded-xl border border-base-300/80 bg-base-100 overflow-hidden">
     <!-- Toolbar -->
     <header class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300/60 px-5 py-4">
       <div>
@@ -8,7 +8,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <label class="input input-sm rounded-xl border-base-300/80">
+        <label class="input input-sm rounded-lg border-base-300/80 bg-base-200/40">
           <PhMagnifyingGlass :size="15" class="text-base-content/50" />
           <input
             type="search"
@@ -20,7 +20,7 @@
         </label>
 
         <select
-          class="select select-sm rounded-xl border-base-300/80"
+          class="select select-sm rounded-lg border-base-300/80 bg-base-100 text-sm"
           :value="statusFilter"
           @change="emit('update:statusFilter', ($event.target as HTMLSelectElement).value as StatusFilter)"
         >
@@ -49,7 +49,7 @@
     <div v-else class="overflow-x-auto">
       <table class="table table-sm w-full">
         <thead>
-          <tr class="text-[11px] uppercase tracking-widest text-base-content/40">
+          <tr class="text-[11px] uppercase tracking-wide text-base-content/50">
             <th>
               <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('company')">
                 Client
@@ -89,7 +89,7 @@
             v-for="client in pagedRows"
             :key="client.id"
             class="cursor-pointer hover:bg-base-200/60 transition-colors"
-            :class="selectedClientId === client.id ? 'bg-primary/5' : ''"
+            :class="selectedClientId === client.id ? 'bg-primary/8 ring-1 ring-inset ring-primary/20' : ''"
             @click="emit('select-client', client.id)"
           >
             <!-- Client -->
@@ -120,7 +120,7 @@
             <!-- Status -->
             <td>
               <span
-                class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap"
                 :class="statusClass(client.status)"
               >
                 {{ client.status }}
@@ -158,7 +158,7 @@
             <td @click.stop>
               <button
                 type="button"
-                class="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/50 hover:text-primary"
+                class="btn btn-ghost btn-xs gap-1 rounded-lg text-base-content/45 hover:text-primary hover:bg-primary/8 transition-colors cursor-pointer"
                 title="Add source knowledge"
                 @click="emit('add-seed', client.id)"
               >
@@ -174,24 +174,24 @@
     <!-- Pagination footer -->
     <footer
       v-if="rows.length > PAGE_SIZE"
-      class="flex items-center justify-between px-5 py-3 border-t border-base-300/60"
+      class="flex items-center justify-between border-t border-base-300/60 px-5 py-2.5"
     >
       <button
         type="button"
-        class="btn btn-ghost btn-xs"
+        class="btn btn-sm btn-ghost rounded-lg gap-1.5 text-xs text-base-content/55 hover:text-base-content cursor-pointer disabled:cursor-not-allowed transition-colors"
         :disabled="currentPage === 1"
         @click="currentPage--"
       >
-        ← Prev
+        <PhArrowLeft :size="13" /> Prev
       </button>
-      <span class="text-xs text-base-content/50">Page {{ currentPage }} of {{ totalPages }}</span>
+      <span class="text-xs tabular-nums text-base-content/45">{{ currentPage }} / {{ totalPages }}</span>
       <button
         type="button"
-        class="btn btn-ghost btn-xs"
+        class="btn btn-sm btn-ghost rounded-lg gap-1.5 text-xs text-base-content/55 hover:text-base-content cursor-pointer disabled:cursor-not-allowed transition-colors"
         :disabled="currentPage === totalPages"
         @click="currentPage++"
       >
-        Next →
+        Next <PhArrowRight :size="13" />
       </button>
     </footer>
   </section>
@@ -199,7 +199,7 @@
 
 <script setup lang="ts">
 import { computed, h, ref, watch } from 'vue'
-import { PhMagnifyingGlass, PhPlus, PhCaretUp, PhCaretDown, PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhPlus, PhCaretUp, PhCaretDown, PhCaretUpDown, PhArrowLeft, PhArrowRight } from '@phosphor-icons/vue'
 
 import type { ClientSummary, OnboardingPhase } from '@/contracts/api'
 
@@ -325,9 +325,9 @@ function avatarGradient(name: string): string {
 }
 
 function statusClass(status: ClientSummary['status']): string {
-  if (status === 'active') return 'bg-success/20 text-success-content'
-  if (status === 'blocked') return 'bg-error/20 text-error-content'
-  return 'bg-info/20 text-info-content'
+  if (status === 'active') return 'bg-emerald-100 text-emerald-700'
+  if (status === 'blocked') return 'bg-red-100 text-red-700'
+  return 'bg-blue-100 text-blue-700'
 }
 
 const PHASE_META: Record<OnboardingPhase, { label: string; cls: string }> = {
@@ -337,7 +337,7 @@ const PHASE_META: Record<OnboardingPhase, { label: string; cls: string }> = {
   target_audience: { label: 'Audience', cls: 'bg-cyan-100 text-cyan-700' },
   timeline_budget: { label: 'Timeline', cls: 'bg-amber-100 text-amber-700' },
   review: { label: 'Review', cls: 'bg-orange-100 text-orange-700' },
-  complete: { label: 'Complete', cls: 'bg-success/20 text-success-content' },
+  complete: { label: 'Complete', cls: 'bg-emerald-100 text-emerald-700' },
 }
 
 function phaseLabel(phase: OnboardingPhase): string {
