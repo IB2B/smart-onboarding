@@ -17,6 +17,7 @@ export function mapClientRow(
   row: Record<string, unknown>,
   options: {
     status: 'invited' | 'active' | 'blocked'
+    phase: OnboardingPhase
     progress: number
     lastActivity: string
   },
@@ -27,6 +28,7 @@ export function mapClientRow(
     contactName: row['contact_name'] as string,
     email: row['contact_email'] as string,
     status: options.status,
+    phase: options.phase,
     progress: options.progress,
     lastActivity: options.lastActivity,
   }

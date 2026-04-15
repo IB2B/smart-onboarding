@@ -62,9 +62,10 @@ function buildClientFromRow(
 ): { client: ClientSummary; mappedState: OnboardingState | null } {
   const mappedState = stateRow ? mapOnboardingStateRow(stateRow) : null
   const status = deriveClientStatus(stateRow)
+  const phase = mappedState?.phase ?? 'welcome'
   const progress = deriveClientProgress(mappedState)
   const lastActivity = deriveLastActivity(stateRow, clientRow)
-  const client = mapClientRow(clientRow, { status, progress, lastActivity })
+  const client = mapClientRow(clientRow, { status, phase, progress, lastActivity })
   return { client, mappedState }
 }
 

@@ -77,6 +77,7 @@ const adapterMocks = vi.hoisted(() => ({
       contactName: 'Mina Ghazali',
       email: 'mina@northstar.dental',
       status: 'active',
+      phase: 'welcome',
       progress: 75,
       lastActivity: '2026-04-04T00:00:00.000Z',
     },

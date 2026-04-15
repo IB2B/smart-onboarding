@@ -74,6 +74,7 @@ async function submit() {
       status: 'active',
       milestones: {},
       collected_data: {},
+      last_activity: new Date().toISOString(),
     })
 
     if (stateError) {

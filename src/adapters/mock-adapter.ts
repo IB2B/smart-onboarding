@@ -71,7 +71,12 @@ export class MockApiAdapter implements ApiAdapter {
 
   async getClients(): Promise<ClientSummary[]> {
     await wait(180)
-    return structuredClone(mockClients)
+    return structuredClone(
+      mockClients.map((client) => {
+        const state = mockOnboardingStates.find((s) => s.clientId === client.id)
+        return { ...client, phase: state?.phase ?? 'welcome' }
+      }),
+    )
   }
 
   async getClientThread(clientId: string): Promise<ThreadMessage[]> {

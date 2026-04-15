@@ -21,6 +21,18 @@
       />
     </template>
 
+    <template #topbarActions>
+      <button
+        type="button"
+        class="btn btn-sm rounded-lg border-base-300 bg-base-100 text-base-content/70 hover:bg-base-200"
+        aria-label="Refresh alerts"
+        :disabled="isLoading"
+        @click="loadData"
+      >
+        <PhArrowClockwise :size="16" :class="isLoading ? 'animate-spin' : ''" />
+      </button>
+    </template>
+
     <template #default>
       <div class="mx-auto flex w-full max-w-[1480px] flex-col gap-5 p-3 md:p-5">
 
@@ -38,9 +50,10 @@
             v-for="chip in summaryChips"
             :key="chip.label"
             class="flex flex-col gap-1 rounded-2xl border border-base-300/80 bg-base-100 px-4 py-3"
+            :class="chip.borderClass"
           >
-            <span class="text-xs font-medium text-base-content/55">{{ chip.label }}</span>
-            <span class="text-2xl font-semibold tabular-nums" :class="chip.colorClass">{{ chip.count }}</span>
+            <span class="text-xs font-semibold uppercase tracking-wide" :class="chip.labelClass">{{ chip.label }}</span>
+            <span class="text-2xl font-bold tabular-nums" :class="chip.colorClass">{{ chip.count }}</span>
           </div>
         </div>
 
@@ -91,7 +104,7 @@
           <!-- Category dropdown -->
           <select
             v-model="categoryFilter"
-            class="select select-sm rounded-lg border-base-300 bg-base-200/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+            class="select select-sm rounded-lg border-base-300 bg-base-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="all">All categories</option>
             <option v-for="cat in categoryOptions" :key="cat.value" :value="cat.value">
@@ -213,9 +226,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  PhArrowClockwise,
   PhArrowRight,
   PhBell,
   PhBellSlash,
@@ -228,6 +242,8 @@ import {
   PhWarning,
   PhXCircle,
 } from '@phosphor-icons/vue'
+
+import { supabase } from '@/lib/supabase'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
@@ -296,10 +312,34 @@ const clientsMap = computed<Record<string, ClientSummary>>(() =>
 const openAlerts = computed(() => alerts.value.filter((a) => a.status === 'open'))
 
 const summaryChips = computed(() => [
-  { label: 'Total Open', count: openAlerts.value.length, colorClass: 'text-base-content' },
-  { label: 'Critical', count: openAlerts.value.filter((a) => a.severity === 'critical').length, colorClass: 'text-error' },
-  { label: 'Warning', count: openAlerts.value.filter((a) => a.severity === 'warning').length, colorClass: 'text-warning' },
-  { label: 'Info', count: openAlerts.value.filter((a) => a.severity === 'info').length, colorClass: 'text-info' },
+  {
+    label: 'Total Open',
+    count: openAlerts.value.length,
+    colorClass: 'text-base-content',
+    labelClass: 'text-base-content/50',
+    borderClass: 'border-l-4 border-l-base-content/20',
+  },
+  {
+    label: 'Critical',
+    count: openAlerts.value.filter((a) => a.severity === 'critical').length,
+    colorClass: 'text-error',
+    labelClass: 'text-error/70',
+    borderClass: 'border-l-4 border-l-error',
+  },
+  {
+    label: 'Warning',
+    count: openAlerts.value.filter((a) => a.severity === 'warning').length,
+    colorClass: 'text-warning',
+    labelClass: 'text-warning/70',
+    borderClass: 'border-l-4 border-l-warning',
+  },
+  {
+    label: 'Info',
+    count: openAlerts.value.filter((a) => a.severity === 'info').length,
+    colorClass: 'text-info',
+    labelClass: 'text-info/70',
+    borderClass: 'border-l-4 border-l-info',
+  },
 ])
 
 // ─── Filter options ───────────────────────────────────────────────────────────
@@ -414,5 +454,33 @@ async function handleSignOut(): Promise<void> {
   await router.replace({ name: 'admin-login' })
 }
 
-onMounted(loadData)
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null
+let refreshInterval: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  loadData()
+
+  // Auto-refresh every 60 s
+  refreshInterval = setInterval(() => { loadData() }, 60_000)
+
+  // Realtime: reload when any onboarding_states row is updated
+  realtimeChannel = supabase
+    .channel('alerts-view-onboarding')
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'onboarding_states' },
+      () => { loadData() },
+    )
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'onboarding_states' },
+      () => { loadData() },
+    )
+    .subscribe()
+})
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+})
 </script>

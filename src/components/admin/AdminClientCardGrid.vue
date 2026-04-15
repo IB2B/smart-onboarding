@@ -4,7 +4,7 @@
     <header class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300/60 px-5 py-4">
       <div>
         <h2 class="aura-heading text-lg font-semibold">Clients</h2>
-        <p class="text-xs text-base-content/50">{{ rows.length }} result{{ rows.length === 1 ? '' : 's' }}</p>
+        <p class="text-xs text-base-content/50">{{ subtitle }}</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
@@ -63,6 +63,12 @@
               </button>
             </th>
             <th>Status</th>
+            <th class="hidden lg:table-cell">
+              <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('phase')">
+                Phase
+                <SortIcon :sort-key="sortKey" :direction="sortDirection" column="phase" />
+              </button>
+            </th>
             <th>
               <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('progress')">
                 Progress
@@ -80,7 +86,7 @@
         </thead>
         <tbody>
           <tr
-            v-for="client in rows"
+            v-for="client in pagedRows"
             :key="client.id"
             class="cursor-pointer hover:bg-base-200/60 transition-colors"
             :class="selectedClientId === client.id ? 'bg-primary/5' : ''"
@@ -121,6 +127,16 @@
               </span>
             </td>
 
+            <!-- Phase -->
+            <td class="hidden lg:table-cell">
+              <span
+                class="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                :class="phaseClass(client.phase)"
+              >
+                {{ phaseLabel(client.phase) }}
+              </span>
+            </td>
+
             <!-- Progress -->
             <td>
               <div class="flex items-center gap-2 min-w-[80px]">
@@ -154,18 +170,44 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination footer -->
+    <footer
+      v-if="rows.length > PAGE_SIZE"
+      class="flex items-center justify-between px-5 py-3 border-t border-base-300/60"
+    >
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs"
+        :disabled="currentPage === 1"
+        @click="currentPage--"
+      >
+        ← Prev
+      </button>
+      <span class="text-xs text-base-content/50">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs"
+        :disabled="currentPage === totalPages"
+        @click="currentPage++"
+      >
+        Next →
+      </button>
+    </footer>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, ref, watch } from 'vue'
 import { PhMagnifyingGlass, PhPlus, PhCaretUp, PhCaretDown, PhCaretUpDown } from '@phosphor-icons/vue'
 
-import type { ClientSummary } from '@/contracts/api'
+import type { ClientSummary, OnboardingPhase } from '@/contracts/api'
 
 export type StatusFilter = 'all' | ClientSummary['status']
-export type SortKey = 'company' | 'contactName' | 'progress' | 'lastActivity'
+export type SortKey = 'company' | 'contactName' | 'phase' | 'progress' | 'lastActivity'
 export type SortDirection = 'asc' | 'desc'
+
+const PAGE_SIZE = 25
 
 // Inline sort indicator — tiny functional component
 const SortIcon = (p: { sortKey: SortKey; direction: SortDirection; column: SortKey }) => {
@@ -194,6 +236,8 @@ const emit = defineEmits<{
   'add-seed': [clientId: string]
 }>()
 
+const currentPage = ref(1)
+
 function toggleSort(key: SortKey): void {
   if (props.sortKey === key) {
     emit('update:sortDirection', props.sortDirection === 'asc' ? 'desc' : 'asc')
@@ -214,6 +258,16 @@ function parseActivityScore(raw: string): number {
   return 0
 }
 
+const PHASE_ORDER: Record<OnboardingPhase, number> = {
+  welcome: 0,
+  brand_identity: 1,
+  technical_needs: 2,
+  target_audience: 3,
+  timeline_budget: 4,
+  review: 5,
+  complete: 6,
+}
+
 const rows = computed(() => {
   const q = props.query.trim().toLowerCase()
   const filtered = props.clients.filter((c) => {
@@ -223,12 +277,18 @@ const rows = computed(() => {
   })
 
   return [...filtered].sort((a, b) => {
-    let av: string | number = a[props.sortKey] as string | number
-    let bv: string | number = b[props.sortKey] as string | number
     if (props.sortKey === 'lastActivity') {
-      av = parseActivityScore(a.lastActivity)
-      bv = parseActivityScore(b.lastActivity)
+      const av = parseActivityScore(a.lastActivity)
+      const bv = parseActivityScore(b.lastActivity)
+      return props.sortDirection === 'asc' ? av - bv : bv - av
     }
+    if (props.sortKey === 'phase') {
+      const av = PHASE_ORDER[a.phase]
+      const bv = PHASE_ORDER[b.phase]
+      return props.sortDirection === 'asc' ? av - bv : bv - av
+    }
+    const av: string | number = a[props.sortKey] as string | number
+    const bv: string | number = b[props.sortKey] as string | number
     if (typeof av === 'number' && typeof bv === 'number') {
       return props.sortDirection === 'asc' ? av - bv : bv - av
     }
@@ -236,6 +296,28 @@ const rows = computed(() => {
     return props.sortDirection === 'asc' ? cmp : -cmp
   })
 })
+
+const totalPages = computed(() => Math.max(1, Math.ceil(rows.value.length / PAGE_SIZE)))
+
+const pagedRows = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return rows.value.slice(start, start + PAGE_SIZE)
+})
+
+const subtitle = computed(() => {
+  const total = rows.value.length
+  if (total <= PAGE_SIZE) return `${total} result${total === 1 ? '' : 's'}`
+  const start = (currentPage.value - 1) * PAGE_SIZE + 1
+  const end = Math.min(currentPage.value * PAGE_SIZE, total)
+  return `Showing ${start}–${end} of ${total}`
+})
+
+watch(
+  () => rows.value.length,
+  () => {
+    currentPage.value = 1
+  },
+)
 
 function avatarGradient(name: string): string {
   const hue = (name.charCodeAt(0) * 47) % 360
@@ -246,5 +328,23 @@ function statusClass(status: ClientSummary['status']): string {
   if (status === 'active') return 'bg-success/20 text-success-content'
   if (status === 'blocked') return 'bg-error/20 text-error-content'
   return 'bg-info/20 text-info-content'
+}
+
+const PHASE_META: Record<OnboardingPhase, { label: string; cls: string }> = {
+  welcome: { label: 'Welcome', cls: 'bg-base-300 text-base-content/60' },
+  brand_identity: { label: 'Brand', cls: 'bg-violet-100 text-violet-700' },
+  technical_needs: { label: 'Technical', cls: 'bg-blue-100 text-blue-700' },
+  target_audience: { label: 'Audience', cls: 'bg-cyan-100 text-cyan-700' },
+  timeline_budget: { label: 'Timeline', cls: 'bg-amber-100 text-amber-700' },
+  review: { label: 'Review', cls: 'bg-orange-100 text-orange-700' },
+  complete: { label: 'Complete', cls: 'bg-success/20 text-success-content' },
+}
+
+function phaseLabel(phase: OnboardingPhase): string {
+  return PHASE_META[phase].label
+}
+
+function phaseClass(phase: OnboardingPhase): string {
+  return PHASE_META[phase].cls
 }
 </script>

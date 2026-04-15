@@ -26,6 +26,7 @@ export interface ClientSummary {
   contactName: string
   email: string
   status: 'invited' | 'active' | 'blocked'
+  phase: OnboardingPhase
   progress: number
   lastActivity: string
 }
