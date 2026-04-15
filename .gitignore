@@ -3,6 +3,12 @@
 .env.local
 .env.*.local
 
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Local task/project management exports
+clickup-tasks.csv
+
 # Logs
 logs
 *.log
