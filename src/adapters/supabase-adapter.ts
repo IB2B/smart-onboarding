@@ -9,7 +9,8 @@ import type {
   ChatResponse,
   ChatSessionResponse,
   ClientSummary,
-  OnboardingSnapshot,
+  OnboardingBrief,
+  OnboardingSnapshotDelta,
   OnboardingState,
   SeedFileUploadParams,
   SeedNoteCreateParams,
@@ -26,6 +27,7 @@ import {
   severityPriority,
 } from './derive'
 import {
+  mapBriefRow,
   mapChunkRow,
   mapClientRow,
   mapMessageRow,
@@ -182,6 +184,10 @@ export class SupabaseApiAdapter implements ApiAdapter {
       pendingItems: (collectedData['pendingItems'] as string[]) ?? [],
     }
 
+    const onboardingState = stateResult.data
+      ? mapOnboardingStateRow(stateResult.data as Record<string, unknown>)
+      : null
+
     return {
       session: {
         clientId: clientRow['id'] as string,
@@ -191,6 +197,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
         messages,
       },
       snapshot,
+      onboardingState,
     }
   }
 
@@ -213,7 +220,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
     return {
       sessionId: data.sessionId as string,
       message: mapMessageRow(rawMessage),
-      snapshotDelta: (data.snapshotDelta as Partial<OnboardingSnapshot>) ?? {},
+      snapshotDelta: (data.snapshotDelta as Partial<OnboardingSnapshotDelta>) ?? {},
     }
   }
 
@@ -299,7 +306,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
   }
 
   async getAdminClientDetailBundle(clientId: string): Promise<AdminClientDetailBundle> {
-    const [clientResult, stateResult, seedsResult, chunksResult, messagesResult] = await Promise.all([
+    const [clientResult, stateResult, seedsResult, chunksResult, messagesResult, briefsResult] = await Promise.all([
       supabase.from('clients').select('*').eq('id', clientId).single(),
       supabase.from('onboarding_states').select('*').eq('client_id', clientId).maybeSingle(),
       supabase.from('admin_data_seeds').select('*').eq('client_id', clientId),
@@ -312,6 +319,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
         .select('*')
         .eq('client_id', clientId)
         .order('created_at', { ascending: true }),
+      supabase.from('briefs').select('*').eq('client_id', clientId).order('created_at'),
     ])
 
     if (clientResult.error) throw new Error(`getAdminClientDetailBundle (client): ${clientResult.error.message}`)
@@ -319,6 +327,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
     if (seedsResult.error) throw new Error(`getAdminClientDetailBundle (seeds): ${seedsResult.error.message}`)
     if (chunksResult.error) throw new Error(`getAdminClientDetailBundle (chunks): ${chunksResult.error.message}`)
     if (messagesResult.error) throw new Error(`getAdminClientDetailBundle (messages): ${messagesResult.error.message}`)
+    // briefs failure is non-fatal — admin dashboard degrades gracefully
 
     const clientRow = clientResult.data as Record<string, unknown>
     const stateRow = stateResult.data ? (stateResult.data as Record<string, unknown>) : null
@@ -346,6 +355,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
     const messages = (messagesResult.data ?? []).map((row) =>
       mapMessageRow(row as Record<string, unknown>),
     )
+    const briefs = (briefsResult.data ?? []).map((row) => mapBriefRow(row as Record<string, unknown>))
 
     return {
       client,
@@ -354,6 +364,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
       ingestStates: seeds.map((seed) => buildIngestState(seed, chunks)),
       documentChunks: chunks,
       messages,
+      briefs,
       alerts: buildAlertsForClient(client, onboardingState, seeds, chunks),
     }
   }
@@ -524,6 +535,40 @@ export class SupabaseApiAdapter implements ApiAdapter {
     if (storagePath && !storagePath.startsWith('http')) {
       await supabase.storage.from('raw-uploads').remove([storagePath])
     }
+  }
+
+  async getClientBriefs(clientId: string): Promise<OnboardingBrief[]> {
+    const { data, error } = await supabase
+      .from('briefs')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at')
+
+    if (error) throw new Error(`getClientBriefs: ${error.message}`)
+    return (data ?? []).map((row) => mapBriefRow(row as Record<string, unknown>))
+  }
+
+  async approveBrief(briefId: string): Promise<void> {
+    const { error } = await supabase
+      .from('briefs')
+      .update({ status: 'client_approved', updated_at: new Date().toISOString() })
+      .eq('id', briefId)
+
+    if (error) throw new Error(`approveBrief: ${error.message}`)
+  }
+
+  async completeOnboarding(clientId: string): Promise<void> {
+    const { error } = await supabase
+      .from('onboarding_states')
+      .update({
+        phase: 'complete',
+        status: 'complete',
+        completed_at: new Date().toISOString(),
+        last_activity: new Date().toISOString(),
+      })
+      .eq('client_id', clientId)
+
+    if (error) throw new Error(`completeOnboarding: ${error.message}`)
   }
 
   async createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord> {

@@ -9,6 +9,7 @@ import type {
   ChatResponse,
   ChatSessionResponse,
   ClientSummary,
+  OnboardingBrief,
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
@@ -52,6 +53,7 @@ function getClientBundle(clientId: string): AdminClientDetailBundle | undefined 
     ingestStates,
     documentChunks: structuredClone(documentChunks),
     messages,
+    briefs: [],
     alerts: buildAlertsForClient(
       client,
       onboardingState,
@@ -87,7 +89,8 @@ export class MockApiAdapter implements ApiAdapter {
 
   async getPortalSession(_token?: string): Promise<ChatSessionResponse> {
     await wait(160)
-    return structuredClone(mockPortalSession)
+    const mock = structuredClone(mockPortalSession)
+    return { ...mock, onboardingState: null }
   }
 
   async sendPortalMessage(request: ChatRequest): Promise<ChatResponse> {
@@ -268,4 +271,12 @@ export class MockApiAdapter implements ApiAdapter {
   async deleteSeed(_seedId: string): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 200))
   }
+
+  async getClientBriefs(_clientId: string): Promise<OnboardingBrief[]> {
+    return []
+  }
+
+  async approveBrief(_briefId: string): Promise<void> {}
+
+  async completeOnboarding(_clientId: string): Promise<void> {}
 }

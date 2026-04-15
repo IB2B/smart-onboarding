@@ -131,6 +131,20 @@ export function buildAlertsForClient(
     })
   }
 
+  if (state && state.phase === 'review' && state.status !== 'complete') {
+    alerts.push({
+      id: `alert_${client.id}_review`,
+      clientId: client.id,
+      severity: 'warning',
+      status: 'open',
+      category: 'review',
+      title: `${client.company} is ready for review`,
+      description:
+        'All onboarding milestones are complete. Review the generated brief and mark the client as complete.',
+      createdAt: state.lastActivity,
+    })
+  }
+
   if (state && state.phase === 'welcome' && state.status === 'active') {
     alerts.push({
       id: `alert_${client.id}_welcome`,

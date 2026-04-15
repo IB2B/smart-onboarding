@@ -1,9 +1,12 @@
 import type {
   AdminDocumentChunkRecord,
   AdminSeedRecord,
+  BriefStatus,
+  BriefType,
   ClientSummary,
   IngestStatus,
   MilestoneMap,
+  OnboardingBrief,
   OnboardingPhase,
   OnboardingState,
   OnboardingStatus,
@@ -80,6 +83,18 @@ const roleMap: Record<string, ThreadMessage['role']> = {
   client: 'client',
   assistant: 'assistant',
   operator: 'operator',
+}
+
+export function mapBriefRow(row: Record<string, unknown>): OnboardingBrief {
+  return {
+    id: row['id'] as string,
+    clientId: row['client_id'] as string,
+    briefType: row['brief_type'] as BriefType,
+    content: (row['content'] as string) ?? '',
+    status: row['status'] as BriefStatus,
+    createdAt: row['created_at'] as string,
+    updatedAt: row['updated_at'] as string,
+  }
 }
 
 export function mapMessageRow(row: Record<string, unknown>): ThreadMessage {
