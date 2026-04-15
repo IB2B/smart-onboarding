@@ -1,13 +1,15 @@
 <template>
   <section class="rounded-xl border border-base-300/80 bg-base-100 overflow-hidden">
     <!-- Toolbar -->
-    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300/60 px-5 py-4">
+    <header
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-base-300/60 px-5 py-4"
+    >
       <div>
         <h2 class="aura-heading text-lg font-semibold">Clients</h2>
         <p class="text-xs text-base-content/50">{{ subtitle }}</p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-2">
         <label class="input input-sm rounded-lg border-base-300/80 bg-base-200/40">
           <PhMagnifyingGlass :size="15" class="text-base-content/50" />
           <input
@@ -22,7 +24,9 @@
         <select
           class="select select-sm rounded-lg border-base-300/80 bg-base-100 text-sm"
           :value="statusFilter"
-          @change="emit('update:statusFilter', ($event.target as HTMLSelectElement).value as StatusFilter)"
+          @change="
+            emit('update:statusFilter', ($event.target as HTMLSelectElement).value as StatusFilter)
+          "
         >
           <option value="all">All statuses</option>
           <option value="active">Active</option>
@@ -38,10 +42,7 @@
     </div>
 
     <!-- Empty -->
-    <div
-      v-else-if="rows.length === 0"
-      class="py-16 text-center text-sm text-base-content/50"
-    >
+    <div v-else-if="rows.length === 0" class="py-16 text-center text-sm text-base-content/50">
       No matching clients found.
     </div>
 
@@ -51,32 +52,52 @@
         <thead>
           <tr class="text-[11px] uppercase tracking-wide text-base-content/50">
             <th>
-              <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('company')">
+              <button
+                type="button"
+                class="flex items-center gap-1 hover:text-base-content/70 transition-colors"
+                @click="toggleSort('company')"
+              >
                 Client
                 <SortIcon :sort-key="sortKey" :direction="sortDirection" column="company" />
               </button>
             </th>
             <th class="hidden sm:table-cell">
-              <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('contactName')">
+              <button
+                type="button"
+                class="flex items-center gap-1 hover:text-base-content/70 transition-colors"
+                @click="toggleSort('contactName')"
+              >
                 Contact
                 <SortIcon :sort-key="sortKey" :direction="sortDirection" column="contactName" />
               </button>
             </th>
             <th>Status</th>
             <th class="hidden lg:table-cell">
-              <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('phase')">
+              <button
+                type="button"
+                class="flex items-center gap-1 hover:text-base-content/70 transition-colors"
+                @click="toggleSort('phase')"
+              >
                 Phase
                 <SortIcon :sort-key="sortKey" :direction="sortDirection" column="phase" />
               </button>
             </th>
             <th>
-              <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('progress')">
+              <button
+                type="button"
+                class="flex items-center gap-1 hover:text-base-content/70 transition-colors"
+                @click="toggleSort('progress')"
+              >
                 Progress
                 <SortIcon :sort-key="sortKey" :direction="sortDirection" column="progress" />
               </button>
             </th>
             <th class="hidden md:table-cell">
-              <button type="button" class="flex items-center gap-1 hover:text-base-content/70 transition-colors" @click="toggleSort('lastActivity')">
+              <button
+                type="button"
+                class="flex items-center gap-1 hover:text-base-content/70 transition-colors"
+                @click="toggleSort('lastActivity')"
+              >
                 Last Active
                 <SortIcon :sort-key="sortKey" :direction="sortDirection" column="lastActivity" />
               </button>
@@ -89,7 +110,9 @@
             v-for="client in pagedRows"
             :key="client.id"
             class="cursor-pointer hover:bg-base-200/60 transition-colors"
-            :class="selectedClientId === client.id ? 'bg-primary/8 ring-1 ring-inset ring-primary/20' : ''"
+            :class="
+              selectedClientId === client.id ? 'bg-primary/8 ring-1 ring-inset ring-primary/20' : ''
+            "
             @click="emit('select-client', client.id)"
           >
             <!-- Client -->
@@ -104,7 +127,9 @@
                 </div>
                 <div class="min-w-0">
                   <p class="text-sm font-medium truncate max-w-[140px]">{{ client.company }}</p>
-                  <p class="text-xs text-base-content/50 truncate max-w-[140px] sm:hidden">{{ client.contactName }}</p>
+                  <p class="text-xs text-base-content/50 truncate max-w-[140px] sm:hidden">
+                    {{ client.contactName }}
+                  </p>
                 </div>
               </div>
             </td>
@@ -113,7 +138,9 @@
             <td class="hidden sm:table-cell">
               <div class="min-w-0">
                 <p class="text-sm truncate max-w-[140px]">{{ client.contactName }}</p>
-                <p class="text-xs text-base-content/50 truncate max-w-[140px]">{{ client.email }}</p>
+                <p class="text-xs text-base-content/50 truncate max-w-[140px]">
+                  {{ client.email }}
+                </p>
               </div>
             </td>
 
@@ -145,7 +172,9 @@
                   :value="client.progress"
                   max="100"
                 />
-                <span class="text-xs tabular-nums text-base-content/60">{{ client.progress }}%</span>
+                <span class="text-xs tabular-nums text-base-content/60"
+                  >{{ client.progress }}%</span
+                >
               </div>
             </td>
 
@@ -184,7 +213,9 @@
       >
         <PhArrowLeft :size="13" /> Prev
       </button>
-      <span class="text-xs tabular-nums text-base-content/45">{{ currentPage }} / {{ totalPages }}</span>
+      <span class="text-xs tabular-nums text-base-content/45"
+        >{{ currentPage }} / {{ totalPages }}</span
+      >
       <button
         type="button"
         class="btn btn-sm btn-ghost rounded-lg gap-1.5 text-xs text-base-content/55 hover:text-base-content cursor-pointer disabled:cursor-not-allowed transition-colors"
@@ -199,7 +230,15 @@
 
 <script setup lang="ts">
 import { computed, h, ref, watch } from 'vue'
-import { PhMagnifyingGlass, PhPlus, PhCaretUp, PhCaretDown, PhCaretUpDown, PhArrowLeft, PhArrowRight } from '@phosphor-icons/vue'
+import {
+  PhMagnifyingGlass,
+  PhPlus,
+  PhCaretUp,
+  PhCaretDown,
+  PhCaretUpDown,
+  PhArrowLeft,
+  PhArrowRight,
+} from '@phosphor-icons/vue'
 
 import type { ClientSummary, OnboardingPhase } from '@/contracts/api'
 

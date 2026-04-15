@@ -22,6 +22,19 @@
     </template>
 
     <template #topbarActions>
+      <!-- Notification bell: counts open 'review' category alerts -->
+      <button
+        v-if="reviewAlertCount > 0"
+        type="button"
+        class="relative btn btn-sm rounded-lg border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer"
+        aria-label="View clients needing review"
+        @click="router.push('/admin/alerts')"
+      >
+        <PhBell :size="16" />
+        <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white leading-none">
+          {{ reviewAlertCount }}
+        </span>
+      </button>
       <button
         type="button"
         class="btn btn-sm rounded-lg border-base-300 bg-base-100 text-base-content/70 hover:bg-base-200"
@@ -157,6 +170,13 @@ const clientsMap = computed<Record<string, ClientSummary>>(() =>
 )
 
 const blockedCount = computed(() => dashboardSnapshot.value?.totals.blocked ?? 0)
+
+const reviewAlertCount = computed(
+  () =>
+    dashboardSnapshot.value?.alerts.filter(
+      (a) => a.category === 'review' && a.status === 'open',
+    ).length ?? 0,
+)
 
 const kpiSummary = computed(() => {
   if (!dashboardSnapshot.value) {

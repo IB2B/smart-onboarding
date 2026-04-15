@@ -389,6 +389,7 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
 ]
 
 const categoryOptions: { value: AdminAlert['category']; label: string }[] = [
+  { value: 'review', label: 'Needs Review' },
   { value: 'stale', label: 'Stale' },
   { value: 'ingest', label: 'Ingest' },
   { value: 'milestone', label: 'Milestone' },
@@ -429,24 +430,26 @@ function severityTextClass(severity: AlertSeverity): string {
 
 function categoryLabel(category: AdminAlert['category']): string {
   const labels: Record<AdminAlert['category'], string> = {
+    review: 'Review',
     stale: 'Stale',
     ingest: 'Ingest',
     milestone: 'Milestone',
     message: 'Message',
     ops: 'Ops',
   }
-  return labels[category]
+  return labels[category] ?? category
 }
 
 function categoryBadgeClass(category: AdminAlert['category']): string {
   const classes: Record<AdminAlert['category'], string> = {
+    review: 'bg-amber-100 text-amber-700',
     stale: 'bg-amber-100 text-amber-700',
     ingest: 'bg-blue-100 text-blue-700',
     milestone: 'bg-violet-100 text-violet-700',
     message: 'bg-emerald-100 text-emerald-700',
     ops: 'bg-slate-100 text-slate-600',
   }
-  return classes[category]
+  return classes[category] ?? 'bg-slate-100 text-slate-600'
 }
 
 function formatDate(iso: string): string {

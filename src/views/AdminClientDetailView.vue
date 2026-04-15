@@ -156,6 +156,12 @@
                 :client-id="clientId"
                 :full-page="true"
               />
+              <AdminClientModalBriefTab
+                v-if="showBriefTab"
+                v-show="activeTab === 'brief'"
+                :briefs="briefs"
+                @complete-onboarding="handleCompleteOnboarding"
+              />
             </div>
           </div>
         </template>
@@ -189,12 +195,14 @@ import AdminClientModalInfoTab from '@/components/admin/AdminClientModalInfoTab.
 import AdminClientModalSeedsTab from '@/components/admin/AdminClientModalSeedsTab.vue'
 import AdminClientModalAlertsTab from '@/components/admin/AdminClientModalAlertsTab.vue'
 import AdminClientModalChatTab from '@/components/admin/AdminClientModalChatTab.vue'
+import AdminClientModalBriefTab from '@/components/admin/AdminClientModalBriefTab.vue'
 import ProfileDock from '@/components/system/ProfileDock.vue'
 import type {
   AdminAlert,
   AdminIngestState,
   AdminSeedRecord,
   ClientSummary,
+  OnboardingBrief,
   OnboardingState,
   ThreadMessage,
 } from '@/contracts/api'
@@ -203,7 +211,7 @@ import { apiClient } from '@/services/api-client'
 import { useSpecLabStore } from '@/stores/spec-lab'
 import { useAuthStore } from '@/stores/auth'
 
-type TabId = 'info' | 'seeds' | 'alerts' | 'chat'
+type TabId = 'info' | 'seeds' | 'alerts' | 'chat' | 'brief'
 
 const store = useSpecLabStore()
 const auth = useAuthStore()
@@ -235,6 +243,12 @@ const seeds = ref<AdminSeedRecord[]>([])
 const ingestStates = ref<AdminIngestState[]>([])
 const alerts = ref<AdminAlert[]>([])
 const messages = ref<ThreadMessage[]>([])
+const briefs = ref<OnboardingBrief[]>([])
+
+const showBriefTab = computed(() => {
+  const phase = onboardingState.value?.phase
+  return phase === 'review' || phase === 'complete'
+})
 
 const clientIdRef = computed(() => clientId.value || null)
 
@@ -259,11 +273,16 @@ useSeedRealtime(clientIdRef, (seedId, ingestStatus, errorMessage) => {
 
 const openAlertCount = computed(() => alerts.value.filter((a) => a.status === 'open').length)
 
+const readyBriefCount = computed(() =>
+  briefs.value.filter((b) => b.status === 'ready' || b.status === 'client_approved').length,
+)
+
 const tabDefs = computed(() => [
   { id: 'info' as const, label: 'Info' },
   { id: 'seeds' as const, label: 'Seeds', badge: seeds.value.length || undefined },
   { id: 'alerts' as const, label: 'Alerts', badge: openAlertCount.value || undefined },
   { id: 'chat' as const, label: 'Chat', badge: messages.value.length || undefined },
+  ...(showBriefTab.value ? [{ id: 'brief' as const, label: 'Brief', badge: readyBriefCount.value || undefined }] : []),
 ])
 
 const sidebarSections = computed(() => [
@@ -290,11 +309,12 @@ async function loadDetail(): Promise<void> {
   isLoading.value = true
   loadError.value = ''
   try {
-    const [bundle, seedRecords, ingestRecords, alertRecords] = await Promise.all([
+    const [bundle, seedRecords, ingestRecords, alertRecords, briefRecords] = await Promise.all([
       apiClient.getAdminClientDetailBundle(clientId.value),
       apiClient.getAdminSeedRecords(clientId.value),
       apiClient.getAdminIngestStates(clientId.value),
       apiClient.getAdminAlerts(clientId.value),
+      apiClient.getClientBriefs(clientId.value),
     ])
     client.value = bundle.client
     onboardingState.value = bundle.onboardingState
@@ -302,10 +322,22 @@ async function loadDetail(): Promise<void> {
     ingestStates.value = ingestRecords
     alerts.value = alertRecords
     messages.value = bundle.messages
+    briefs.value = briefRecords
   } catch {
     loadError.value = 'Unable to load client details.'
   } finally {
     isLoading.value = false
+  }
+}
+
+async function handleCompleteOnboarding(): Promise<void> {
+  if (!clientId.value) return
+  try {
+    await apiClient.completeOnboarding(clientId.value)
+    // Reload to reflect new phase/status
+    await loadDetail()
+  } catch {
+    loadError.value = 'Failed to mark onboarding as complete. Please try again.'
   }
 }
 
