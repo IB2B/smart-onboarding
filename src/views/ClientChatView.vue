@@ -92,11 +92,24 @@
             <span class="mr-[6px] h-3 w-px bg-[#0a0a0a]/40" aria-hidden="true" />
             <p class="aura-topbar-title text-[14px] tracking-[-0.04em]">Smart Onboarding</p>
           </div>
+          <!-- Center: milestone progress bar -->
+          <div class="flex flex-1 justify-center">
+            <PortalProgressBar :onboarding-state="onboardingState" />
+          </div>
         </div>
       </header>
 
       <div class="flex flex-1 flex-col overflow-hidden">
-        <Transition name="fade" mode="out-in">
+        <!-- POST-ONBOARDING: review / complete state -->
+        <PostOnboardingView
+          v-if="isPostOnboarding && !loading && onboardingState"
+          :onboarding-state="onboardingState"
+          :brief="clientBrief"
+          :brief-loading="briefLoading"
+          @approve="handleBriefApprove"
+        />
+
+        <Transition v-else name="fade" mode="out-in">
           <!-- LOADING STATE -->
           <div v-if="loading" key="loading" class="flex flex-col gap-4 p-6">
             <SkeletonBlock variant="assistant" :lines="2" />
@@ -195,7 +208,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { uploadAudioBlob } from '@/lib/audio-upload'
 import { useRoute } from 'vue-router'
 import {
@@ -216,7 +229,9 @@ import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import SkeletonBlock from '@/components/system/SkeletonBlock.vue'
 import ThreadBlock from '@/components/system/ThreadBlock.vue'
 import TypingIndicator from '@/components/chat/TypingIndicator.vue'
-import type { ThreadMessage } from '@/contracts/api'
+import PortalProgressBar from '@/components/portal/PortalProgressBar.vue'
+import PostOnboardingView from '@/components/portal/PostOnboardingView.vue'
+import type { OnboardingBrief, OnboardingState, ThreadMessage } from '@/contracts/api'
 import { useSpecLabStore } from '@/stores/spec-lab'
 import { useHotkey } from '@/composables/useHotkey'
 import { useAutoScroll } from '@/composables/useAutoScroll'
@@ -246,6 +261,16 @@ const loading = ref(true)
 const showWelcome = ref(true)
 const clientName = ref('')
 const clientCompany = ref('')
+const onboardingState = ref<OnboardingState | null>(null)
+const clientBrief = ref<OnboardingBrief | null>(null)
+const briefLoading = ref(false)
+let briefPollTimer: ReturnType<typeof setTimeout> | null = null
+let briefPollAttempts = 0
+const BRIEF_MAX_POLL_ATTEMPTS = 40 // ~2 min at 3s intervals
+
+const isPostOnboarding = computed(
+  () => onboardingState.value?.phase === 'review' || onboardingState.value?.phase === 'complete',
+)
 
 watch(
   () => sessionMessages.value.length,
@@ -271,6 +296,33 @@ function resolvedToken(): string | undefined {
 let resolvedClientId = ''
 let resolvedSessionId = ''
 
+async function loadClientBrief() {
+  if (!resolvedClientId) return
+  if (briefPollTimer) {
+    clearTimeout(briefPollTimer)
+    briefPollTimer = null
+  }
+  briefLoading.value = briefPollAttempts === 0
+  try {
+    const briefs = await apiClient.getClientBriefs(resolvedClientId)
+    clientBrief.value = briefs.find((b) => b.briefType === 'non_technical') ?? null
+    briefPollAttempts++
+    // Keep polling while generating OR while no brief has appeared yet (function may still be running)
+    const stillWaiting = clientBrief.value === null || clientBrief.value.status === 'generating'
+    if (stillWaiting && briefPollAttempts < BRIEF_MAX_POLL_ATTEMPTS) {
+      briefPollTimer = setTimeout(loadClientBrief, 3000)
+    }
+  } catch {
+    // Non-fatal — retry up to limit
+    briefPollAttempts++
+    if (briefPollAttempts < BRIEF_MAX_POLL_ATTEMPTS) {
+      briefPollTimer = setTimeout(loadClientBrief, 3000)
+    }
+  } finally {
+    briefLoading.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     await auth.init()
@@ -281,6 +333,12 @@ onMounted(async () => {
     clientCompany.value = session.session.companyName
     sessionMessages.value = [...session.session.messages]
     showWelcome.value = session.session.messages.length === 0
+    onboardingState.value = session.onboardingState
+    // Load brief immediately if already in review/complete
+    const phase = session.onboardingState?.phase
+    if (phase === 'review' || phase === 'complete') {
+      loadClientBrief()
+    }
   } catch {
     loadError.value = 'Unable to load the session right now. Please retry.'
   } finally {
@@ -310,6 +368,22 @@ function removeAttachment(index: number): void {
   attachments.value = attachments.value.filter((_, i) => i !== index)
 }
 
+function applySnapshotDelta(delta: Partial<{ phase?: string; milestones?: Record<string, unknown> }>) {
+  if (!delta.phase && !delta.milestones) return
+  if (!onboardingState.value) return
+  onboardingState.value = {
+    ...onboardingState.value,
+    ...(delta.phase ? { phase: delta.phase as OnboardingState['phase'] } : {}),
+    ...(delta.milestones
+      ? { milestones: { ...onboardingState.value.milestones, ...(delta.milestones as OnboardingState['milestones']) } }
+      : {}),
+  }
+  if (delta.phase === 'review') {
+    briefPollAttempts = 0
+    loadClientBrief()
+  }
+}
+
 async function handleSendAudio(blob: Blob): Promise<void> {
   if (!resolvedClientId || sending.value) return
   sending.value = true
@@ -325,6 +399,7 @@ async function handleSendAudio(blob: Blob): Promise<void> {
       token: resolvedToken(),
     })
     sessionMessages.value = [...sessionMessages.value, response.message]
+    applySnapshotDelta(response.snapshotDelta)
   } catch {
     loadError.value = 'Voice message could not be sent. Please try again.'
   } finally {
@@ -377,6 +452,7 @@ async function sendMessage() {
       token: resolvedToken(),
     })
     sessionMessages.value = [...sessionMessages.value, response.message]
+    applySnapshotDelta(response.snapshotDelta)
   } catch {
     loadError.value = 'Message could not be sent. Please try again.'
     sessionMessages.value = sessionMessages.value.map((m) =>
@@ -393,5 +469,16 @@ function retryMessage(messageId: string) {
   sessionMessages.value = sessionMessages.value.filter((m) => m.id !== messageId)
   draft.value = message.content
   sendMessage()
+}
+
+async function handleBriefApprove(briefId: string) {
+  try {
+    await apiClient.approveBrief(briefId)
+    if (clientBrief.value?.id === briefId) {
+      clientBrief.value = { ...clientBrief.value, status: 'client_approved' }
+    }
+  } catch {
+    // Non-fatal — approval will be retried on next page load
+  }
 }
 </script>
