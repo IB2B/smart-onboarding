@@ -91,13 +91,26 @@ export interface AdminIngestState {
   updatedAt: string
 }
 
+export type BriefType = 'technical' | 'non_technical'
+export type BriefStatus = 'generating' | 'ready' | 'client_approved' | 'complete'
+
+export interface OnboardingBrief {
+  id: string
+  clientId: string
+  briefType: BriefType
+  content: string
+  status: BriefStatus
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AdminAlert {
   id: string
   clientId?: string
   seedId?: string
   severity: AlertSeverity
   status: AlertStatus
-  category: 'stale' | 'ingest' | 'milestone' | 'message' | 'ops'
+  category: 'stale' | 'ingest' | 'milestone' | 'message' | 'ops' | 'review'
   title: string
   description: string
   createdAt: string
@@ -137,6 +150,7 @@ export interface AdminClientDetailBundle {
   documentChunks: AdminDocumentChunkRecord[]
   messages: ThreadMessage[]
   alerts: AdminAlert[]
+  briefs: OnboardingBrief[]
 }
 
 // Widget payloads ─────────────────────────────────────────────────────────────
@@ -214,9 +228,16 @@ export interface OnboardingSnapshot {
   pendingItems: string[]
 }
 
+// Extended delta returned per message — also carries phase/milestone changes
+export interface OnboardingSnapshotDelta extends OnboardingSnapshot {
+  phase?: OnboardingPhase
+  milestones?: Partial<MilestoneMap>
+}
+
 export interface ChatSessionResponse {
   session: ChatSession
   snapshot: OnboardingSnapshot
+  onboardingState: OnboardingState | null
 }
 
 export interface ChatRequest {
@@ -231,7 +252,7 @@ export interface ChatRequest {
 export interface ChatResponse {
   sessionId: string
   message: ThreadMessage
-  snapshotDelta: Partial<OnboardingSnapshot>
+  snapshotDelta: Partial<OnboardingSnapshotDelta>
 }
 
 export interface SeedFileUploadParams {
@@ -268,4 +289,7 @@ export interface ApiAdapter {
   createNoteSeed(params: SeedNoteCreateParams): Promise<AdminSeedRecord>
   createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord>
   deleteSeed(seedId: string): Promise<void>
+  getClientBriefs(clientId: string): Promise<OnboardingBrief[]>
+  approveBrief(briefId: string): Promise<void>
+  completeOnboarding(clientId: string): Promise<void>
 }

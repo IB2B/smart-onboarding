@@ -307,4 +307,5 @@ export const mockPortalSession: ChatSessionResponse = {
     requiredIntegrations: ['HubSpot', 'Calendly', 'Stripe'],
     pendingItems: ['Upload brand assets', 'Confirm monthly traffic baseline'],
   },
+  onboardingState: null,
 }
