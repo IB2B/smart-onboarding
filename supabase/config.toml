@@ -361,6 +361,11 @@ authorization_url_path = "/oauth/consent"
 # Allow dynamic client registration
 allow_dynamic_registration = false
 
+[functions.chat-agent]
+# Our function verifies the JWT internally via callerClient.auth.getUser().
+# Disable gateway-level verification to support ES256 algorithm (newer Supabase projects).
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
