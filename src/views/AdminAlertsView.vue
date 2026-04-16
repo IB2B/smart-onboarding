@@ -263,7 +263,6 @@ import {
   PhBell,
   PhBellSlash,
   PhChartLineUp,
-  PhChatTeardropText,
   PhInfo,
   PhMagnifyingGlass,
   PhUserCircle,
@@ -321,10 +320,6 @@ const sidebarSections = computed(() => [
       { label: 'Clients', to: '/admin/clients', icon: PhUsersThree },
       { label: 'Alerts', to: '/admin/alerts', active: true, icon: PhBell },
     ],
-  },
-  {
-    title: 'Portal',
-    items: [{ label: 'Client Chat', to: '/portal/chat/demo-token', icon: PhChatTeardropText }],
   },
   {
     title: 'Account',

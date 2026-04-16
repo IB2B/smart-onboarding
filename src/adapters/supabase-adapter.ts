@@ -71,6 +71,31 @@ function buildClientFromRow(
   return { client, mappedState }
 }
 
+async function resolveLegacyPortalClientId(token: string): Promise<string> {
+  const normalizedToken = token.trim()
+  if (!normalizedToken) {
+    throw new Error('Portal token is missing')
+  }
+
+  // Legacy portal links used the client UUID directly in the route.
+  // Until a dedicated portal_tokens table exists, explicitly verify that
+  // the token maps to a real client instead of trusting it as an ID blindly.
+  const { data: clientRow, error } = await supabase
+    .from('clients')
+    .select('id')
+    .eq('id', normalizedToken)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`resolveLegacyPortalClientId: ${error.message}`)
+  }
+  if (!clientRow) {
+    throw new Error('Invalid or expired portal link')
+  }
+
+  return (clientRow as Record<string, unknown>)['id'] as string
+}
+
 // Fetch all clients + their onboarding states in two explicit queries, then
 // join in JS. This is more reliable than the embedded-join syntax
 // (`select('*, onboarding_states(*)')`) which silently returns empty arrays
@@ -128,9 +153,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
     let clientId: string
 
     if (token) {
-      // TODO(phase-3): replace direct client-id token with portal_tokens table lookup
-      // e.g. supabase.from('portal_tokens').select('client_id').eq('token', token).gt('expires_at', now)
-      clientId = token
+      clientId = await resolveLegacyPortalClientId(token)
     } else {
       // No token — resolve via authenticated user's email (magic link flow)
       const { data: userData, error: userError } = await supabase.auth.getUser()

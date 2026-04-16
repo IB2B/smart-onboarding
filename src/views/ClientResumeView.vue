@@ -8,7 +8,7 @@
     <template #sidebar>
       <AuraLogo />
       <div class="mt-6 space-y-2">
-        <RouterLink class="btn btn-sm w-full justify-start rounded-xl" to="/portal/chat/demo-token">Back to Chat</RouterLink>
+        <RouterLink class="btn btn-sm w-full justify-start rounded-xl" :to="{ name: 'portal-chat' }">Back to Chat</RouterLink>
         <RouterLink class="btn btn-sm w-full justify-start rounded-xl" to="/admin/monitor">Admin Monitor</RouterLink>
       </div>
       <ProfileDock detail="Client Portal" name="Aura Resume" />

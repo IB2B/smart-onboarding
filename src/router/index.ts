@@ -16,7 +16,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     public?: boolean
     requiresRole?: 'admin'
-    requiresPortalAuth?: boolean  // allow if authenticated OR magicToken param present
+    requiresPortalAuth?: boolean // allow if authenticated client OR legacy magicToken param present
   }
 }
 
@@ -115,7 +115,8 @@ router.beforeEach(async (to) => {
 
   // Portal routes — allow if authenticated OR a magic token is present in the URL
   if (to.meta.requiresPortalAuth) {
-    if (auth.isAuthenticated || to.params['magicToken']) return true
+    if (to.params['magicToken']) return true
+    if (auth.isAuthenticated && !auth.isAdmin) return true
     return { name: 'portal-login' }
   }
 

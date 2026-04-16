@@ -81,7 +81,7 @@
               :loading="isRefreshing"
               @invite="handleInvite"
               @review-blocked="handleReviewBlocked"
-              @open-chat="handleOpenChat"
+              @open-clients="handleOpenClients"
               @refresh="refreshAll"
             />
           </div>
@@ -102,7 +102,6 @@ import {
   PhArrowClockwise,
   PhBell,
   PhChartLineUp,
-  PhChatTeardropText,
   PhPlus,
   PhUserCircle,
   PhUsersThree,
@@ -154,10 +153,6 @@ const sidebarSections = computed(() => [
         badge: String(dashboardSnapshot.value?.alerts.filter((a) => a.status === 'open').length ?? 0),
       },
     ],
-  },
-  {
-    title: 'Portal',
-    items: [{ label: 'Client Chat', to: '/portal/chat/demo-token', icon: PhChatTeardropText }],
   },
   {
     title: 'Account',
@@ -237,8 +232,8 @@ function handleReviewBlocked(): void {
   router.push({ name: 'admin-clients', query: { status: 'blocked' } })
 }
 
-function handleOpenChat(): void {
-  router.push({ name: 'portal-chat' })
+function handleOpenClients(): void {
+  router.push({ name: 'admin-clients' })
 }
 
 onMounted(loadInitialData)

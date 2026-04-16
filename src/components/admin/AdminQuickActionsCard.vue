@@ -9,7 +9,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   invite: []
   'review-blocked': []
-  'open-chat': []
+  'open-clients': []
   refresh: []
 }>()
 </script>
@@ -58,7 +58,7 @@ const emit = defineEmits<{
         >{{ props.blockedCount }}</span>
       </button>
 
-      <!-- Open Client Chat — neutral -->
+      <!-- Open Clients — neutral -->
       <button
         type="button"
         :disabled="props.loading"
@@ -67,10 +67,10 @@ const emit = defineEmits<{
                hover:bg-base-200/90 active:scale-[0.98] focus-visible:outline-none
                focus-visible:ring-2 focus-visible:ring-base-300
                disabled:cursor-not-allowed disabled:opacity-50"
-        @click="emit('open-chat')"
+        @click="emit('open-clients')"
       >
         <PhChatTeardropText :size="16" weight="fill" aria-hidden="true" class="shrink-0" />
-        Open Chat
+        View Clients
       </button>
 
       <!-- Refresh Data — spins when loading -->
