@@ -179,15 +179,12 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PhArrowLeft,
-  PhBell,
-  PhChartLineUp,
   PhPlus,
-  PhUserCircle,
-  PhUsersThree,
 } from '@phosphor-icons/vue'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
+import { useAdminSidebar } from '@/composables/useAdminSidebar'
 import { useSeedRealtime } from '@/composables/useSeedRealtime'
 import AdminShellFrame from '@/components/admin/AdminShellFrame.vue'
 import AdminClientModalInfoTab from '@/components/admin/AdminClientModalInfoTab.vue'
@@ -284,20 +281,7 @@ const tabDefs = computed(() => [
   ...(showBriefTab.value ? [{ id: 'brief' as const, label: 'Brief', badge: readyBriefCount.value || undefined }] : []),
 ])
 
-const sidebarSections = computed(() => [
-  {
-    title: 'Monitor',
-    items: [
-      { label: 'Overview', to: '/admin/monitor', icon: PhChartLineUp },
-      { label: 'Clients', to: '/admin/clients', active: true, icon: PhUsersThree },
-      { label: 'Alerts', to: '/admin/alerts', icon: PhBell },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [{ label: 'Account', to: '/admin/account', icon: PhUserCircle }],
-  },
-])
+const sidebarSections = useAdminSidebar('clients')
 
 async function loadDetail(): Promise<void> {
   if (!clientId.value) return

@@ -262,16 +262,14 @@ import {
   PhArrowRight,
   PhBell,
   PhBellSlash,
-  PhChartLineUp,
   PhInfo,
   PhMagnifyingGlass,
-  PhUserCircle,
-  PhUsersThree,
   PhWarning,
   PhXCircle,
 } from '@phosphor-icons/vue'
 
 import { supabase } from '@/lib/supabase'
+import { useAdminSidebar } from '@/composables/useAdminSidebar'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
@@ -312,20 +310,7 @@ const categoryFilter = ref<CategoryFilter>('all')
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-const sidebarSections = computed(() => [
-  {
-    title: 'Monitor',
-    items: [
-      { label: 'Overview', to: '/admin/monitor', icon: PhChartLineUp },
-      { label: 'Clients', to: '/admin/clients', icon: PhUsersThree },
-      { label: 'Alerts', to: '/admin/alerts', active: true, icon: PhBell },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [{ label: 'Account', to: '/admin/account', icon: PhUserCircle }],
-  },
-])
+const sidebarSections = useAdminSidebar('alerts')
 
 // ─── Derived maps ─────────────────────────────────────────────────────────────
 

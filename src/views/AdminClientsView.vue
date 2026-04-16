@@ -78,15 +78,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   PhArrowClockwise,
-  PhBell,
-  PhChartLineUp,
   PhPlus,
-  PhUserCircle,
-  PhUsersThree,
 } from '@phosphor-icons/vue'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
+import { useAdminSidebar } from '@/composables/useAdminSidebar'
 import AdminClientCardGrid, {
   type SortDirection,
   type SortKey,
@@ -123,20 +120,8 @@ const statusFilter = ref<StatusFilter>((route.query['status'] as StatusFilter) ?
 const sortKey = ref<SortKey>('lastActivity')
 const sortDirection = ref<SortDirection>('desc')
 
-const sidebarSections = computed(() => [
-  {
-    title: 'Monitor',
-    items: [
-      { label: 'Overview', to: '/admin/monitor', icon: PhChartLineUp },
-      { label: 'Clients', to: '/admin/clients', active: true, icon: PhUsersThree, badge: String(clients.value.length) },
-      { label: 'Alerts', to: '/admin/alerts', icon: PhBell },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [{ label: 'Account', to: '/admin/account', icon: PhUserCircle }],
-  },
-])
+const clientCount = computed(() => clients.value.length)
+const sidebarSections = useAdminSidebar('clients', { clients: clientCount })
 
 async function loadClients(): Promise<void> {
   isLoading.value = true

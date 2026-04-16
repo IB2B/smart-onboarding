@@ -101,14 +101,12 @@ import { useRouter } from 'vue-router'
 import {
   PhArrowClockwise,
   PhBell,
-  PhChartLineUp,
   PhPlus,
-  PhUserCircle,
-  PhUsersThree,
 } from '@phosphor-icons/vue'
 
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import { useHotkey } from '@/composables/useHotkey'
+import { useAdminSidebar } from '@/composables/useAdminSidebar'
 import AdminAlertsCard from '@/components/admin/AdminAlertsCard.vue'
 import ClientProvisionModal from '@/components/admin/ClientProvisionModal.vue'
 import AdminKpiStrip from '@/components/admin/AdminKpiStrip.vue'
@@ -140,25 +138,9 @@ const loadError = ref('')
 const dashboardSnapshot = ref<AdminDashboardSnapshot | null>(null)
 const clients = ref<ClientSummary[]>([])
 
-const sidebarSections = computed(() => [
-  {
-    title: 'Monitor',
-    items: [
-      { label: 'Overview', to: '/admin/monitor', active: true, icon: PhChartLineUp },
-      { label: 'Clients', to: '/admin/clients', icon: PhUsersThree, badge: String(clients.value.length) },
-      {
-        label: 'Alerts',
-        to: '/admin/alerts',
-        icon: PhBell,
-        badge: String(dashboardSnapshot.value?.alerts.filter((a) => a.status === 'open').length ?? 0),
-      },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [{ label: 'Account', to: '/admin/account', icon: PhUserCircle }],
-  },
-])
+const clientCount = computed(() => clients.value.length)
+const openAlertCount = computed(() => dashboardSnapshot.value?.alerts.filter((a) => a.status === 'open').length ?? 0)
+const sidebarSections = useAdminSidebar('monitor', { clients: clientCount, alerts: openAlertCount })
 
 const clientsMap = computed<Record<string, ClientSummary>>(() =>
   Object.fromEntries(clients.value.map((c) => [c.id, c]))

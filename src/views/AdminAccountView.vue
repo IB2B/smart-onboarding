@@ -257,12 +257,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   PhArrowLeft,
-  PhBell,
-  PhChartLineUp,
   PhCheckCircle,
   PhEnvelopeSimple,
-  PhUserCircle,
-  PhUsersThree,
   PhWarningCircle,
   PhXCircle,
 } from '@phosphor-icons/vue'
@@ -270,6 +266,7 @@ import {
 import AdminShellFrame from '@/components/admin/AdminShellFrame.vue'
 import ProfileDock from '@/components/system/ProfileDock.vue'
 import { supabase } from '@/lib/supabase'
+import { useAdminSidebar } from '@/composables/useAdminSidebar'
 import { useSpecLabStore } from '@/stores/spec-lab'
 import { useAuthStore } from '@/stores/auth'
 
@@ -277,21 +274,7 @@ const store = useSpecLabStore()
 const auth = useAuthStore()
 const router = useRouter()
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-const sidebarSections = [
-  {
-    title: 'Monitor',
-    items: [
-      { label: 'Overview', to: '/admin/monitor', icon: PhChartLineUp },
-      { label: 'Clients', to: '/admin/clients', icon: PhUsersThree },
-      { label: 'Alerts', to: '/admin/alerts', icon: PhBell },
-    ],
-  },
-  {
-    title: 'Account',
-    items: [{ label: 'Account', to: '/admin/account', active: true, icon: PhUserCircle }],
-  },
-]
+const sidebarSections = useAdminSidebar('account')
 
 // ── Profile form ──────────────────────────────────────────────────────────────
 const displayName = ref('')
