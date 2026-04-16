@@ -4,6 +4,16 @@ Vue 3 + daisyUI app for Aura Smart Onboarding with:
 - Client portal (`/portal/chat/:magicToken?`, `/portal/resume`)
 - Admin portal (`/admin/monitor`)
 
+Current route behavior:
+- `/` redirects to `/admin/login`
+- portal access supports authenticated sessions and optional `:magicToken`
+
+Current design lock in code:
+- Theme: `aura-frost`
+- Font pair: `jakarta-inter`
+- Icon pack: `phosphor`
+- Density: `balanced`
+
 ## Non-Negotiable UI Rule
 
 This project is a **flat web app**.
@@ -13,6 +23,7 @@ This project is a **flat web app**.
 - Keep visuals clean, modern, and web-native.
 
 See [UI_GUARDRAILS.md](./UI_GUARDRAILS.md) before any UI changes.
+See [implementation_plan.md](./implementation_plan.md) for the tracked current-state plan and known conflicts.
 
 ## Recommended IDE Setup
 
