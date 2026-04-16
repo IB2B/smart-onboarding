@@ -10,6 +10,8 @@ import type {
   ChatSessionResponse,
   ClientSummary,
   OnboardingBrief,
+  ProvisionClientParams,
+  ProvisionClientResult,
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
@@ -279,4 +281,12 @@ export class MockApiAdapter implements ApiAdapter {
   async approveBrief(_briefId: string): Promise<void> {}
 
   async completeOnboarding(_clientId: string): Promise<void> {}
+
+  async provisionClient(_params: ProvisionClientParams): Promise<ProvisionClientResult> {
+    await wait(400)
+    return {
+      clientId: crypto.randomUUID(),
+      portalUrl: `${window.location.origin}/portal/chat/mock-token`,
+    }
+  }
 }

@@ -8,6 +8,8 @@ import type {
   ApiAdapter,
   ChatRequest,
   OnboardingBrief,
+  ProvisionClientParams,
+  ProvisionClientResult,
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
@@ -113,6 +115,10 @@ class ApiClient {
 
   completeOnboarding(clientId: string): Promise<void> {
     return this.adapter.completeOnboarding(clientId)
+  }
+
+  provisionClient(params: ProvisionClientParams): Promise<ProvisionClientResult> {
+    return this.adapter.provisionClient(params)
   }
 }
 

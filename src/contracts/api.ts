@@ -274,6 +274,19 @@ export interface SeedUrlCreateParams {
   url: string
 }
 
+export interface ProvisionClientParams {
+  companyName: string
+  contactName: string
+  contactEmail: string
+}
+
+export interface ProvisionClientResult {
+  clientId: string
+  portalUrl: string
+  /** Set when the client was created but the invite email failed. */
+  emailError?: string
+}
+
 export interface ApiAdapter {
   getClients(): Promise<ClientSummary[]>
   getClientThread(clientId: string): Promise<ThreadMessage[]>
@@ -292,4 +305,5 @@ export interface ApiAdapter {
   getClientBriefs(clientId: string): Promise<OnboardingBrief[]>
   approveBrief(briefId: string): Promise<void>
   completeOnboarding(clientId: string): Promise<void>
+  provisionClient(params: ProvisionClientParams): Promise<ProvisionClientResult>
 }

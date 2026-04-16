@@ -12,6 +12,8 @@ import type {
   OnboardingBrief,
   OnboardingSnapshotDelta,
   OnboardingState,
+  ProvisionClientParams,
+  ProvisionClientResult,
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
@@ -71,27 +73,37 @@ function buildClientFromRow(
   return { client, mappedState }
 }
 
-async function resolveLegacyPortalClientId(token: string): Promise<string> {
+async function resolvePortalToken(token: string): Promise<string> {
   const normalizedToken = token.trim()
-  if (!normalizedToken) {
-    throw new Error('Portal token is missing')
+  if (!normalizedToken) throw new Error('Portal token is missing')
+
+  // Look up the token in the portal_tokens table first (new path)
+  const { data: tokenRow, error: tokenError } = await supabase
+    .from('portal_tokens')
+    .select('client_id, expires_at')
+    .eq('token', normalizedToken)
+    .maybeSingle()
+
+  if (tokenError) throw new Error(`resolvePortalToken: ${tokenError.message}`)
+
+  if (tokenRow) {
+    const row = tokenRow as { client_id: string; expires_at: string }
+    if (new Date(row.expires_at) < new Date()) {
+      throw new Error('Portal link has expired')
+    }
+    return row.client_id
   }
 
-  // Legacy portal links used the client UUID directly in the route.
-  // Until a dedicated portal_tokens table exists, explicitly verify that
-  // the token maps to a real client instead of trusting it as an ID blindly.
-  const { data: clientRow, error } = await supabase
+  // Legacy fallback: old links used the client UUID directly in the route.
+  // Verify it maps to a real client before trusting it.
+  const { data: clientRow, error: clientError } = await supabase
     .from('clients')
     .select('id')
     .eq('id', normalizedToken)
     .maybeSingle()
 
-  if (error) {
-    throw new Error(`resolveLegacyPortalClientId: ${error.message}`)
-  }
-  if (!clientRow) {
-    throw new Error('Invalid or expired portal link')
-  }
+  if (clientError) throw new Error(`resolvePortalToken (legacy): ${clientError.message}`)
+  if (!clientRow) throw new Error('Invalid or expired portal link')
 
   return (clientRow as Record<string, unknown>)['id'] as string
 }
@@ -153,7 +165,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
     let clientId: string
 
     if (token) {
-      clientId = await resolveLegacyPortalClientId(token)
+      clientId = await resolvePortalToken(token)
     } else {
       // No token — resolve via authenticated user's email (magic link flow)
       const { data: userData, error: userError } = await supabase.auth.getUser()
@@ -592,6 +604,64 @@ export class SupabaseApiAdapter implements ApiAdapter {
       .eq('client_id', clientId)
 
     if (error) throw new Error(`completeOnboarding: ${error.message}`)
+  }
+
+  async provisionClient(params: ProvisionClientParams): Promise<ProvisionClientResult> {
+    const clientId = crypto.randomUUID()
+
+    const { error: clientError } = await supabase.from('clients').insert({
+      id: clientId,
+      company_name: params.companyName,
+      contact_name: params.contactName,
+      contact_email: params.contactEmail,
+    })
+
+    if (clientError) {
+      if (clientError.code === '23505') throw new Error('DUPLICATE_EMAIL')
+      throw new Error(clientError.message)
+    }
+
+    const { error: stateError } = await supabase.from('onboarding_states').insert({
+      client_id: clientId,
+      phase: 'welcome',
+      status: 'active',
+      milestones: {},
+      collected_data: {},
+      last_activity: new Date().toISOString(),
+    })
+
+    if (stateError) {
+      await supabase.from('clients').delete().eq('id', clientId)
+      throw new Error(stateError.message)
+    }
+
+    // Generate a URL-safe portal token with 30-day expiry
+    const portalToken = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+    const { error: tokenError } = await supabase.from('portal_tokens').insert({
+      client_id: clientId,
+      token: portalToken,
+      expires_at: expiresAt,
+    })
+
+    const origin = window.location.origin
+    const portalUrl = tokenError
+      ? `${origin}/portal/chat`
+      : `${origin}/portal/chat/${portalToken}`
+
+    // Send magic link — failure after DB success returns a partial result so
+    // the caller can still surface the portal URL for manual recovery.
+    const { error: authError } = await supabase.auth.signInWithOtp({
+      email: params.contactEmail,
+      options: { emailRedirectTo: `${origin}/portal/auth/callback` },
+    })
+
+    return {
+      clientId,
+      portalUrl,
+      emailError: authError ? authError.message : undefined,
+    }
   }
 
   async createUrlSeed(params: SeedUrlCreateParams): Promise<AdminSeedRecord> {

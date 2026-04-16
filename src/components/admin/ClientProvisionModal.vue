@@ -2,8 +2,7 @@
 import { ref, watch } from 'vue'
 import { PhX, PhCheckCircle, PhCopySimple, PhCheck, PhSpinner } from '@phosphor-icons/vue'
 
-import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/auth'
+import { apiClient } from '@/services/api-client'
 
 interface Props {
   open: boolean
@@ -11,8 +10,6 @@ interface Props {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{ close: [] }>()
-
-const auth = useAuthStore()
 
 // Form fields
 const companyName = ref('')
@@ -50,55 +47,24 @@ async function submit() {
   }
 
   loading.value = true
-  const clientId = crypto.randomUUID()
-
   try {
-    const { error: clientError } = await supabase.from('clients').insert({
-      id: clientId,
-      company_name: companyName.value.trim(),
-      contact_name: contactName.value.trim(),
-      contact_email: email,
+    const result = await apiClient.provisionClient({
+      companyName: companyName.value.trim(),
+      contactName: contactName.value.trim(),
+      contactEmail: email,
     })
-
-    if (clientError) {
-      // 23505 = unique_violation (duplicate email)
-      errorMessage.value = clientError.code === '23505'
-        ? 'A client with this email already exists.'
-        : 'Something went wrong. Please try again.'
-      return
+    portalUrl.value = result.portalUrl
+    // Show success even when the email failed — admin still gets the portal URL
+    // so they can share it manually or resend the invite later.
+    if (result.emailError) {
+      errorMessage.value = `Invite email failed: ${result.emailError}. Share the portal URL below manually.`
     }
-
-    const { error: stateError } = await supabase.from('onboarding_states').insert({
-      client_id: clientId,
-      phase: 'welcome',
-      status: 'active',
-      milestones: {},
-      collected_data: {},
-      last_activity: new Date().toISOString(),
-    })
-
-    if (stateError) {
-      // Compensate: delete the client row so there are no orphaned records
-      await supabase.from('clients').delete().eq('id', clientId)
-      errorMessage.value = 'Something went wrong. Please try again.'
-      return
-    }
-
-    const redirectTo = `${window.location.origin}/portal/auth/callback`
-    try {
-      await auth.sendMagicLink(email, redirectTo)
-    } catch (err) {
-      // Both DB rows are committed. Show the actual reason so admin can act on it
-      // (e.g. rate limit = wait and resend, invalid email = fix the address)
-      const reason = err instanceof Error ? err.message : 'Unknown error'
-      errorMessage.value = `Client created, but invite email failed: ${reason}`
-      return
-    }
-
-    // The portal URL does not contain the client ID — identity is resolved via Supabase auth
-    // after the client clicks the magic link (see getPortalSession in supabase-adapter.ts)
-    portalUrl.value = `${window.location.origin}/portal/chat`
     success.value = true
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Something went wrong.'
+    errorMessage.value = msg === 'DUPLICATE_EMAIL'
+      ? 'A client with this email already exists.'
+      : 'Something went wrong. Please try again.'
   } finally {
     loading.value = false
   }
@@ -259,11 +225,20 @@ watch(
         <PhCheckCircle :size="52" weight="duotone" class="text-success" aria-hidden="true" />
 
         <div class="space-y-1">
-          <p class="font-semibold text-base-content">Client invited successfully!</p>
-          <p class="text-sm text-base-content/65">
+          <p class="font-semibold text-base-content">Client created!</p>
+          <p v-if="!errorMessage" class="text-sm text-base-content/65">
             A magic link has been sent to
             <span class="font-medium text-base-content/85">{{ contactEmail }}</span>.
           </p>
+        </div>
+
+        <!-- Email warning (shown when client was created but email delivery failed) -->
+        <div
+          v-if="errorMessage"
+          role="alert"
+          class="w-full rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-left text-sm text-warning-content"
+        >
+          {{ errorMessage }}
         </div>
 
         <!-- Copyable portal URL -->
