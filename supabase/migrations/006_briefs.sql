@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS public.briefs (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Required for upsert with onConflict: 'client_id,brief_type' in generate-brief function
+ALTER TABLE public.briefs
+  ADD CONSTRAINT briefs_client_type_unique UNIQUE (client_id, brief_type);
+
 ALTER TABLE public.briefs ENABLE ROW LEVEL SECURITY;
 
 -- Admins: full access to all briefs
