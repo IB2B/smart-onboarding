@@ -10,7 +10,11 @@
       <div class="mt-6 space-y-2">
         <RouterLink class="btn btn-sm w-full justify-start rounded-xl" :to="{ name: 'portal-chat' }">Back to Chat</RouterLink>
       </div>
-      <ProfileDock :detail="auth.userEmail ?? ''" :name="auth.userEmail ?? 'Client Portal'" />
+      <ProfileDock
+        :detail="auth.userEmail ?? ''"
+        :name="auth.userEmail ?? 'Client Portal'"
+        @sign-out="handleSignOut"
+      />
     </template>
 
     <div class="space-y-4">
@@ -60,7 +64,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import AuraLogo from '@/components/system/AuraLogo.vue'
 import AppShell from '@/components/system/AppShell.vue'
@@ -72,6 +76,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const store = useSpecLabStore()
 const auth = useAuthStore()
+const router = useRouter()
 
 const loading = ref(true)
 const loadError = ref('')
@@ -100,4 +105,13 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+async function handleSignOut(): Promise<void> {
+  try {
+    await auth.signOut()
+    await router.replace({ name: 'portal-login' })
+  } catch {
+    loadError.value = 'Unable to sign out right now. Please try again.'
+  }
+}
 </script>

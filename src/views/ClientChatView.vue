@@ -72,7 +72,11 @@
         </div>
       </template>
 
-      <ProfileDock :detail="auth.userEmail ?? ''" :name="clientName || (auth.userEmail ?? '')" />
+      <ProfileDock
+        :detail="auth.userEmail ?? ''"
+        :name="clientName || (auth.userEmail ?? '')"
+        @sign-out="handleSignOut"
+      />
     </template>
 
     <template #default="{ collapsed, toggle }">
@@ -110,10 +114,30 @@
 
         <Transition v-else name="fade" mode="out-in">
           <!-- LOADING STATE -->
-          <div v-if="loading" key="loading" class="flex flex-col gap-4 p-6">
-            <SkeletonBlock variant="assistant" :lines="2" />
-            <SkeletonBlock variant="client" :lines="1" />
-            <SkeletonBlock variant="assistant" :lines="3" />
+          <div v-if="loading" key="loading" class="flex flex-1 items-center justify-center px-4">
+            <div class="w-full max-w-xl rounded-[1.8rem] border border-base-300/70 bg-base-100 px-6 py-8 shadow-sm">
+              <div class="flex flex-col items-center text-center">
+                <div class="relative flex items-center justify-center">
+                  <div class="absolute h-24 w-24 rounded-full bg-primary/15 blur-xl orb-glow" />
+                  <div class="relative flex h-16 w-16 items-center justify-center rounded-full border border-base-300/70 bg-base-200">
+                    <span class="loading loading-spinner loading-md text-primary" aria-hidden="true" />
+                  </div>
+                </div>
+                <h2 class="aura-heading mt-5 text-2xl font-semibold text-base-content">
+                  Opening your portal
+                </h2>
+                <p class="mt-2 max-w-md text-sm leading-6 text-base-content/60">
+                  We’re loading your onboarding conversation, progress, and next steps.
+                </p>
+              </div>
+
+              <div class="mt-8 space-y-3">
+                <div class="h-3 w-28 animate-pulse rounded-full bg-base-300/70" />
+                <div class="h-10 w-full animate-pulse rounded-2xl bg-base-200" />
+                <div class="h-10 w-[82%] animate-pulse rounded-2xl bg-base-200" />
+                <div class="h-3 w-24 animate-pulse rounded-full bg-base-300/70" />
+              </div>
+            </div>
           </div>
 
           <!-- WELCOME STATE: no messages -->
@@ -208,6 +232,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { uploadAudioBlob } from '@/lib/audio-upload'
 import {
   PhArrowDown,
@@ -224,7 +249,6 @@ import AppShell from '@/components/system/AppShell.vue'
 import FloatingComposer from '@/components/system/FloatingComposer.vue'
 import ProfileDock from '@/components/system/ProfileDock.vue'
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
-import SkeletonBlock from '@/components/system/SkeletonBlock.vue'
 import ThreadBlock from '@/components/system/ThreadBlock.vue'
 import TypingIndicator from '@/components/chat/TypingIndicator.vue'
 import PortalProgressBar from '@/components/portal/PortalProgressBar.vue'
@@ -236,6 +260,7 @@ import { useAutoScroll } from '@/composables/useAutoScroll'
 
 const store = useSpecLabStore()
 const auth = useAuthStore()
+const router = useRouter()
 const draft = ref('')
 const spotlightOpen = ref(false)
 const attachments = ref<Array<{ name: string; type: 'file' | 'audio'; file?: File }>>([])
@@ -444,6 +469,15 @@ async function sendMessage() {
     )
   } finally {
     sending.value = false
+  }
+}
+
+async function handleSignOut(): Promise<void> {
+  try {
+    await auth.signOut()
+    await router.replace({ name: 'portal-login' })
+  } catch {
+    loadError.value = 'Unable to sign out right now. Please try again.'
   }
 }
 
