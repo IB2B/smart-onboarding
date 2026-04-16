@@ -72,6 +72,12 @@ function resolveClientMessages(clientId: string): ThreadMessage[] {
 
 export class MockApiAdapter implements ApiAdapter {
   private messageCount = 0
+  private uploadedSeeds: AdminSeedRecord[] = []
+
+  private allSeeds(clientId?: string): AdminSeedRecord[] {
+    const combined = [...mockAdminDataSeeds, ...this.uploadedSeeds]
+    return clientId ? combined.filter((seed) => seed.clientId === clientId) : combined
+  }
 
   async getClients(): Promise<ClientSummary[]> {
     await wait(180)
@@ -192,17 +198,12 @@ export class MockApiAdapter implements ApiAdapter {
 
   async getAdminSeedRecords(clientId?: string): Promise<AdminSeedRecord[]> {
     await wait(140)
-    const seeds = clientId
-      ? mockAdminDataSeeds.filter((seed) => seed.clientId === clientId)
-      : mockAdminDataSeeds
-    return structuredClone(seeds)
+    return structuredClone(this.allSeeds(clientId))
   }
 
   async getAdminIngestStates(clientId?: string): Promise<AdminIngestState[]> {
     await wait(140)
-    const seeds = clientId
-      ? mockAdminDataSeeds.filter((seed) => seed.clientId === clientId)
-      : mockAdminDataSeeds
+    const seeds = this.allSeeds(clientId)
     return structuredClone(seeds.map((seed) => buildIngestState(seed, mockDocumentChunks)))
   }
 
@@ -230,16 +231,19 @@ export class MockApiAdapter implements ApiAdapter {
 
   async uploadSeedFile(params: SeedFileUploadParams): Promise<AdminSeedRecord> {
     await new Promise((resolve) => setTimeout(resolve, 500))
-    return {
+    const seed: AdminSeedRecord = {
       id: Date.now().toString(),
       clientId: params.clientId,
       title: params.title,
       sourceType: params.sourceType,
       storagePath: `raw-uploads/${params.clientId}/${params.file.name}`,
-      ingestStatus: 'queued',
+      processedSummary: `Mock ${params.sourceType} content processed for ${params.title}.`,
+      ingestStatus: 'ready',
       createdBy: 'mock-admin',
       createdAt: new Date().toISOString(),
     }
+    this.uploadedSeeds = [...this.uploadedSeeds, seed]
+    return seed
   }
 
   async createNoteSeed(params: SeedNoteCreateParams): Promise<AdminSeedRecord> {

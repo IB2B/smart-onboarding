@@ -199,6 +199,7 @@ const hasRecordedAudio = computed(() => recorder.recordedBlob.value !== null)
 const isSendDisabled = computed(() => {
   if (recorder.isRecording.value) return true
   if (hasRecordedAudio.value) return false
+  if ((props.attachments?.length ?? 0) > 0) return false
   return !props.modelValue.trim()
 })
 
@@ -210,6 +211,9 @@ const actionHint = computed(() => {
   }
   if (hasRecordedAudio.value) {
     return 'Preview your clip, then send it as a voice message or discard it to re-record.'
+  }
+  if ((props.attachments?.length ?? 0) > 0) {
+    return 'Your attachment is ready. Send it with or without a typed message.'
   }
   if (props.modelValue.trim()) {
     return 'Press Enter to send, or Shift + Enter for a new line.'
@@ -244,7 +248,7 @@ function handleSubmit() {
     recorder.discard()
     return
   }
-  if (!props.modelValue.trim()) return
+  if (!props.modelValue.trim() && (props.attachments?.length ?? 0) === 0) return
   emit('submit')
 }
 

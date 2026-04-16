@@ -362,6 +362,14 @@ function handleAttach(): void {
 }
 
 const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024 // 25 MB
+const SEED_READY_POLL_INTERVAL_MS = 1500
+const SEED_READY_MAX_WAIT_MS = 30000
+
+type UploadedSeedRef = {
+  id: string
+  title: string
+  sourceType: 'document' | 'audio'
+}
 
 function onFileSelected(event: Event): void {
   const input = event.target as HTMLInputElement
@@ -377,6 +385,135 @@ function onFileSelected(event: Event): void {
 
 function removeAttachment(index: number): void {
   attachments.value = attachments.value.filter((_, i) => i !== index)
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function waitForSeedProcessing(seedIds: string[]): Promise<{
+  ready: UploadedSeedRef[]
+  failed: UploadedSeedRef[]
+  pending: UploadedSeedRef[]
+}> {
+  const deadline = Date.now() + SEED_READY_MAX_WAIT_MS
+  let latestRows = await apiClient.getAdminSeedRecords(resolvedClientId)
+
+  while (Date.now() < deadline) {
+    const tracked = latestRows.filter((row) => seedIds.includes(row.id))
+    const unresolved = tracked.filter(
+      (row) => row.ingestStatus !== 'ready' && row.ingestStatus !== 'failed',
+    )
+
+    if (tracked.length === seedIds.length && unresolved.length === 0) {
+      return {
+        ready: tracked
+          .filter((row) => row.ingestStatus === 'ready')
+          .map((row) => ({
+            id: row.id,
+            title: row.title,
+            sourceType: row.sourceType as 'document' | 'audio',
+          })),
+        failed: tracked
+          .filter((row) => row.ingestStatus === 'failed')
+          .map((row) => ({
+            id: row.id,
+            title: row.title,
+            sourceType: row.sourceType as 'document' | 'audio',
+          })),
+        pending: [],
+      }
+    }
+
+    await sleep(SEED_READY_POLL_INTERVAL_MS)
+    latestRows = await apiClient.getAdminSeedRecords(resolvedClientId)
+  }
+
+  const tracked = latestRows.filter((row) => seedIds.includes(row.id))
+  return {
+    ready: tracked
+      .filter((row) => row.ingestStatus === 'ready')
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        sourceType: row.sourceType as 'document' | 'audio',
+      })),
+    failed: tracked
+      .filter((row) => row.ingestStatus === 'failed')
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        sourceType: row.sourceType as 'document' | 'audio',
+      })),
+    pending: tracked
+      .filter((row) => row.ingestStatus !== 'ready' && row.ingestStatus !== 'failed')
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        sourceType: row.sourceType as 'document' | 'audio',
+      })),
+  }
+}
+
+function formatSeedTitles(seeds: UploadedSeedRef[]): string {
+  if (seeds.length === 0) return ''
+  if (seeds.length === 1) return `"${seeds[0]!.title}"`
+  if (seeds.length === 2) return `"${seeds[0]!.title}" and "${seeds[1]!.title}"`
+  return `${seeds.slice(0, -1).map((seed) => `"${seed.title}"`).join(', ')}, and "${seeds[seeds.length - 1]!.title}"`
+}
+
+function buildSubmissionMessage(messageText: string, uploadedSeeds: UploadedSeedRef[]): string {
+  const trimmed = messageText.trim()
+  if (uploadedSeeds.length === 0) return trimmed
+
+  const titles = formatSeedTitles(uploadedSeeds)
+  const hasAudio = uploadedSeeds.some((seed) => seed.sourceType === 'audio')
+  const sourceLabel = uploadedSeeds.length === 1 ? 'source' : 'sources'
+  const instruction = hasAudio
+    ? `Use the newly processed ${sourceLabel} ${titles}, including any voice transcription, in your response.`
+    : `Use the newly uploaded ${sourceLabel} ${titles} in your response.`
+
+  if (trimmed) {
+    return `${trimmed}\n\n${instruction}`
+  }
+
+  return hasAudio
+    ? `I've sent ${uploadedSeeds.length === 1 ? 'a voice note' : 'voice notes and files'} (${titles}). Please review the transcription and respond using what I shared.`
+    : `I've uploaded ${sourceLabel} ${titles}. Please review ${uploadedSeeds.length === 1 ? 'it' : 'them'} and respond using the contents.`
+}
+
+async function uploadAndProcessAttachments(items: Array<{ name: string; file: File }>): Promise<UploadedSeedRef[]> {
+  if (!resolvedClientId || items.length === 0) return []
+
+  const uploadedSeeds: UploadedSeedRef[] = []
+
+  for (const item of items) {
+    const seed = await apiClient.uploadSeedFile({
+      clientId: resolvedClientId,
+      file: item.file,
+      title: item.name,
+      sourceType: 'document',
+    })
+
+    uploadedSeeds.push({
+      id: seed.id,
+      title: seed.title,
+      sourceType: 'document',
+    })
+  }
+
+  const processed = await waitForSeedProcessing(uploadedSeeds.map((seed) => seed.id))
+
+  if (processed.failed.length > 0) {
+    const failedTitles = processed.failed.map((seed) => seed.title).join(', ')
+    throw new Error(`These uploads could not be processed: ${failedTitles}.`)
+  }
+
+  if (processed.pending.length > 0 && processed.ready.length === 0) {
+    throw new Error('Your uploaded file is still being processed. Please wait a few seconds and try again.')
+  }
+
+  return processed.ready
 }
 
 function applySnapshotDelta(delta: Partial<{ phase?: string; milestones?: Record<string, unknown> }>) {
@@ -401,12 +538,11 @@ async function handleSendAudio(blob: Blob): Promise<void> {
   showWelcome.value = false
   try {
     await uploadAudioBlob(blob, resolvedClientId)
-    // Send a fixed, non-interpolated message — storage path is handled server-side
     const response = await apiClient.sendPortalMessage({
       sessionId: resolvedSessionId,
       clientId: resolvedClientId,
       message: '[Voice message]',
-      provider: 'openrouter',
+      provider: 'openai',
     })
     sessionMessages.value = [...sessionMessages.value, response.message]
     applySnapshotDelta(response.snapshotDelta)
@@ -425,45 +561,52 @@ function handleWidgetRespond(messageId: string, value: string | number) {
 }
 
 async function sendMessage() {
-  if (!draft.value.trim() || sending.value) return
+  if ((!draft.value.trim() && attachments.value.length === 0) || sending.value) return
   loadError.value = ''
   sending.value = true
   showWelcome.value = false
-  const messageText = draft.value
+  const messageText = draft.value.trim()
+  const queuedAttachments = attachments.value
+    .filter((attachment): attachment is { name: string; type: 'file'; file: File } =>
+      attachment.type === 'file' && attachment.file instanceof File,
+    )
   const tempId = `user_${Date.now()}`
   draft.value = ''
   scrollToBottom('instant')
   sessionMessages.value = [
     ...sessionMessages.value,
-    { id: tempId, role: 'client', content: messageText, createdAt: new Date().toISOString() },
+    {
+      id: tempId,
+      role: 'client',
+      content:
+        messageText || `Uploaded ${queuedAttachments.length} attachment${queuedAttachments.length === 1 ? '' : 's'}.`,
+      createdAt: new Date().toISOString(),
+    },
   ]
   try {
-    for (const attachment of attachments.value) {
-      if (attachment.file && resolvedClientId) {
-        try {
-          await apiClient.uploadSeedFile({
-            clientId: resolvedClientId,
-            file: attachment.file,
-            title: attachment.name,
-            sourceType: 'document',
-          })
-        } catch {
-          loadError.value = `Could not upload "${attachment.name}". The message will still be sent.`
-        }
-      }
-    }
+    const readySeeds = await uploadAndProcessAttachments(
+      queuedAttachments.map((attachment) => ({
+        name: attachment.name,
+        file: attachment.file,
+      })),
+    )
+    const submissionMessage = buildSubmissionMessage(messageText, readySeeds)
     attachments.value = []
+    sessionMessages.value = sessionMessages.value.map((m) =>
+      m.id === tempId ? { ...m, content: submissionMessage } : m,
+    )
 
     const response = await apiClient.sendPortalMessage({
       sessionId: resolvedSessionId,
       clientId: resolvedClientId,
-      message: messageText,
-      provider: 'openrouter',
+      message: submissionMessage,
+      provider: 'openai',
     })
     sessionMessages.value = [...sessionMessages.value, response.message]
     applySnapshotDelta(response.snapshotDelta)
-  } catch {
-    loadError.value = 'Message could not be sent. Please try again.'
+  } catch (err) {
+    loadError.value =
+      err instanceof Error ? err.message : 'Message could not be sent. Please try again.'
     sessionMessages.value = sessionMessages.value.map((m) =>
       m.id === tempId ? { ...m, failed: true } : m,
     )
