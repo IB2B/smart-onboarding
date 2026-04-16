@@ -233,7 +233,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { uploadAudioBlob } from '@/lib/audio-upload'
 import {
   PhArrowDown,
   PhClockCounterClockwise,
@@ -391,6 +390,19 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function deriveAudioExtension(mimeType: string): string {
+  const base = mimeType.split(';')[0]?.trim() ?? ''
+  switch (base) {
+    case 'audio/mp4':
+      return 'mp4'
+    case 'audio/ogg':
+      return 'ogg'
+    case 'audio/webm':
+    default:
+      return 'webm'
+  }
+}
+
 async function waitForSeedProcessing(seedIds: string[]): Promise<{
   ready: UploadedSeedRef[]
   failed: UploadedSeedRef[]
@@ -537,17 +549,43 @@ async function handleSendAudio(blob: Blob): Promise<void> {
   sending.value = true
   showWelcome.value = false
   try {
-    await uploadAudioBlob(blob, resolvedClientId)
+    loadError.value = ''
+    const extension = deriveAudioExtension(blob.type || 'audio/webm')
+    const audioFile = new File([blob], `voice-note-${Date.now()}.${extension}`, {
+      type: blob.type || 'audio/webm',
+    })
+    const seed = await apiClient.uploadSeedFile({
+      clientId: resolvedClientId,
+      file: audioFile,
+      title: 'Voice note',
+      sourceType: 'audio',
+    })
+    const processed = await waitForSeedProcessing([seed.id])
+
+    if (processed.failed.length > 0) {
+      throw new Error('The voice note could not be transcribed.')
+    }
+
+    if (processed.pending.length > 0 && processed.ready.length === 0) {
+      throw new Error('Your voice note is still being transcribed. Please wait a few seconds and try again.')
+    }
+
+    const messageText = buildSubmissionMessage('', processed.ready)
     const response = await apiClient.sendPortalMessage({
       sessionId: resolvedSessionId,
       clientId: resolvedClientId,
-      message: '[Voice message]',
+      message: messageText,
       provider: 'openai',
     })
-    sessionMessages.value = [...sessionMessages.value, response.message]
+    sessionMessages.value = [
+      ...sessionMessages.value,
+      { id: `user_${Date.now()}`, role: 'client', content: messageText, createdAt: new Date().toISOString() },
+      response.message,
+    ]
     applySnapshotDelta(response.snapshotDelta)
-  } catch {
-    loadError.value = 'Voice message could not be sent. Please try again.'
+  } catch (err) {
+    loadError.value =
+      err instanceof Error ? err.message : 'Voice message could not be sent. Please try again.'
   } finally {
     sending.value = false
   }
