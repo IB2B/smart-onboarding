@@ -9,6 +9,7 @@ import AdminAlertsView from '@/views/AdminAlertsView.vue'
 import AdminAccountView from '@/views/AdminAccountView.vue'
 import ClientChatView from '@/views/ClientChatView.vue'
 import ClientResumeView from '@/views/ClientResumeView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 import PortalAuthCallback from '@/views/PortalAuthCallback.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -89,7 +90,9 @@ const router = createRouter({
     },
     {
       path: '/:pathMatch(.*)*',
-      redirect: { name: 'admin-login' },
+      name: 'not-found',
+      component: NotFoundView,
+      meta: { public: true },
     },
   ],
 })
