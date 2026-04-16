@@ -54,7 +54,7 @@
                 <p class="mt-0.5 truncate text-xs text-base-content/50">{{ auth.userEmail }}</p>
               </div>
               <!-- Role badge -->
-              <span class="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+              <span class="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
                 admin
               </span>
             </div>
@@ -102,7 +102,7 @@
                   :disabled="profileLoading"
                   class="btn btn-primary btn-sm rounded-lg px-4 text-xs font-medium
                          cursor-pointer hover:brightness-105 active:scale-[0.97]
-                         transition-all disabled:cursor-not-allowed"
+                         transition-[background-color,transform,opacity] disabled:cursor-not-allowed"
                 >
                   <span v-if="profileLoading" class="loading loading-spinner loading-xs" aria-hidden="true" />
                   {{ profileLoading ? 'Saving…' : 'Save changes' }}
@@ -191,7 +191,7 @@
                   :disabled="passwordLoading || !newPassword || !confirmPassword || newPassword !== confirmPassword"
                   class="btn btn-primary btn-sm rounded-lg px-4 text-xs font-medium
                          cursor-pointer hover:brightness-105 active:scale-[0.97]
-                         transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                         transition-[background-color,transform,opacity] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <span v-if="passwordLoading" class="loading loading-spinner loading-xs" aria-hidden="true" />
                   {{ passwordLoading ? 'Updating…' : 'Update Password' }}

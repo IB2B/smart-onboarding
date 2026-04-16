@@ -440,6 +440,17 @@ body {
   background: color-mix(in srgb, var(--color-base-100) 90%, var(--color-primary) 10%);
 }
 
+/* Hide collapse button + divider on mobile — must live in CSS, not Tailwind,
+   because .admin-collapse-button is unlayered and wins over @layer utilities */
+@media (max-width: 1023px) {
+  .admin-collapse-button {
+    display: none;
+  }
+  .admin-topbar-divider {
+    display: none;
+  }
+}
+
 .admin-topbar-divider {
   width: 1px;
   align-self: stretch;
@@ -602,7 +613,9 @@ body {
     radial-gradient(circle at 70% 70%, #5b6cff 0%, transparent 55%),
     linear-gradient(135deg, #7ca6ff, #5b6cff 50%, #8b5cf6);
   background-size: 200% 200%;
-  animation: orb-shift 6s ease-in-out infinite, orb-float 4s ease-in-out infinite;
+  animation:
+    orb-shift 6s ease-in-out infinite,
+    orb-float 4s ease-in-out infinite;
   box-shadow:
     0 0 30px rgba(91, 108, 255, 0.3),
     0 0 60px rgba(91, 108, 255, 0.1);
@@ -613,7 +626,8 @@ body {
 }
 
 @keyframes orb-shift {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
     filter: hue-rotate(0deg);
   }
@@ -628,12 +642,18 @@ body {
 }
 
 @keyframes orb-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 @keyframes orb-glow-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.4;
     transform: scale(1);
   }
@@ -675,7 +695,9 @@ body {
 
 .spotlight-enter-active .spotlight-card,
 .spotlight-leave-active .spotlight-card {
-  transition: transform 200ms ease, opacity 200ms ease;
+  transition:
+    transform 200ms ease,
+    opacity 200ms ease;
 }
 
 .spotlight-enter-from,
@@ -704,8 +726,14 @@ body {
 }
 
 @keyframes typing-bounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-6px); }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
 }
 
 /* Skeleton shimmer */
@@ -721,8 +749,12 @@ body {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ── Markdown output (assistant messages) ────────────────────────────────── */
@@ -731,15 +763,36 @@ body {
   font-size: 0.9375rem;
   line-height: 1.6;
 }
-.aura-markdown :where(p) { margin: 0 0 0.6em; }
-.aura-markdown :where(p:last-child) { margin-bottom: 0; }
-.aura-markdown :where(ul, ol) { padding-left: 1.25em; margin: 0.5em 0; }
-.aura-markdown :where(li) { margin: 0.2em 0; }
-.aura-markdown :where(strong) { font-weight: 600; }
-.aura-markdown :where(h1, h2, h3, h4) { font-weight: 600; margin: 0.8em 0 0.3em; line-height: 1.3; }
-.aura-markdown :where(h1) { font-size: 1.1rem; }
-.aura-markdown :where(h2) { font-size: 1rem; }
-.aura-markdown :where(h3, h4) { font-size: 0.9375rem; }
+.aura-markdown :where(p) {
+  margin: 0 0 0.6em;
+}
+.aura-markdown :where(p:last-child) {
+  margin-bottom: 0;
+}
+.aura-markdown :where(ul, ol) {
+  padding-left: 1.25em;
+  margin: 0.5em 0;
+}
+.aura-markdown :where(li) {
+  margin: 0.2em 0;
+}
+.aura-markdown :where(strong) {
+  font-weight: 600;
+}
+.aura-markdown :where(h1, h2, h3, h4) {
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  line-height: 1.3;
+}
+.aura-markdown :where(h1) {
+  font-size: 1.1rem;
+}
+.aura-markdown :where(h2) {
+  font-size: 1rem;
+}
+.aura-markdown :where(h3, h4) {
+  font-size: 0.9375rem;
+}
 .aura-markdown :where(code) {
   font-family: ui-monospace, monospace;
   font-size: 0.875em;
@@ -754,7 +807,10 @@ body {
   overflow-x: auto;
   margin: 0.6em 0;
 }
-.aura-markdown :where(pre code) { background: none; padding: 0; }
+.aura-markdown :where(pre code) {
+  background: none;
+  padding: 0;
+}
 .aura-markdown :where(blockquote) {
   border-left: 3px solid var(--color-primary);
   padding-left: 0.75em;
@@ -788,6 +844,19 @@ body {
   .spotlight-leave-to .spotlight-card {
     transform: none;
   }
-  .typing-dot { animation: none; opacity: 0.5; }
-  .skeleton-shimmer { animation: none; background: var(--color-base-200); }
+  .typing-dot {
+    animation: none;
+    opacity: 0.5;
+  }
+  .skeleton-shimmer {
+    animation: none;
+    background: var(--color-base-200);
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

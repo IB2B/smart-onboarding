@@ -4,7 +4,7 @@
     :data-font-pair="fontPairId"
     :data-icon-pack="iconPackId"
     :data-density="density"
-    class="h-screen overflow-hidden"
+    class="h-dvh overflow-hidden"
   >
     <div class="flex h-full w-full flex-col bg-transparent lg:flex-row">
       <div class="flex h-full w-full flex-col overflow-hidden lg:flex-row">
@@ -43,13 +43,22 @@
             <slot name="sidebar" :collapsed="collapsed" :toggle="toggle" />
           </div>
         </aside>
-        <aside
-          id="mobile-sidebar"
-          v-if="mobileSidebarOpen"
-          class="border-b border-base-300/80 bg-base-100 p-4 lg:hidden"
+        <Transition
+          enter-active-class="transition-[max-height,opacity] duration-200 ease-out overflow-hidden"
+          leave-active-class="transition-[max-height,opacity] duration-150 ease-in overflow-hidden"
+          enter-from-class="max-h-0 opacity-0"
+          enter-to-class="max-h-[60vh] opacity-100"
+          leave-from-class="max-h-[60vh] opacity-100"
+          leave-to-class="max-h-0 opacity-0"
         >
-          <slot name="sidebar" :collapsed="collapsed" :toggle="toggle" />
-        </aside>
+          <aside
+            v-if="mobileSidebarOpen"
+            id="mobile-sidebar"
+            class="border-b border-base-300/80 bg-base-100 p-4 lg:hidden"
+          >
+            <slot name="sidebar" :collapsed="collapsed" :toggle="toggle" />
+          </aside>
+        </Transition>
         <main class="relative min-w-0 flex-1 overflow-hidden bg-base-100 p-3 md:p-6">
           <slot :collapsed="collapsed" :toggle="toggle" />
         </main>

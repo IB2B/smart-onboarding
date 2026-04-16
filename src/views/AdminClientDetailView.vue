@@ -107,14 +107,14 @@
           <!-- Detail tabs card -->
           <div class="rounded-2xl border border-base-300/80 bg-base-100">
             <!-- Tab bar -->
-            <div role="tablist" class="flex gap-0.5 border-b border-base-300/60 px-5">
+            <div role="tablist" class="flex gap-0.5 overflow-x-auto border-b border-base-300/60 px-5 scrollbar-none">
               <button
                 v-for="tab in tabDefs"
                 :key="tab.id"
                 type="button"
                 role="tab"
                 :aria-selected="activeTab === tab.id"
-                class="flex items-center gap-1.5 rounded-t-lg border-b-2 px-3 py-3 text-sm font-medium transition-colors -mb-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                class="flex shrink-0 items-center gap-1.5 rounded-t-lg border-b-2 px-3 py-3 text-sm font-medium transition-colors -mb-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 :class="
                   activeTab === tab.id
                     ? 'border-primary text-primary'
@@ -125,7 +125,7 @@
                 {{ tab.label }}
                 <span
                   v-if="tab.badge"
-                  class="rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none"
+                  class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none"
                   :class="tab.id === 'alerts' ? 'bg-error/25 text-error-content' : 'bg-base-300 text-base-content/70'"
                 >{{ tab.badge }}</span>
               </button>

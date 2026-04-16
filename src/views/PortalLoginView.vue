@@ -51,8 +51,12 @@
                 <input
                   v-model="email"
                   type="email"
+                  name="email"
                   required
                   autocomplete="email"
+                  spellcheck="false"
+                  autocorrect="off"
+                  autocapitalize="off"
                   placeholder="you@example.com"
                   :disabled="loading"
                   class="input input-bordered input-sm w-full"

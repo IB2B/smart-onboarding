@@ -31,7 +31,7 @@
         ref="textareaRef"
         rows="1"
         :value="modelValue"
-        class="min-h-[22px] w-full resize-none bg-transparent text-[14px] font-medium leading-[1.21] tracking-[-0.04em] text-[#0a0a0a]/70 placeholder:text-[#0a0a0a]/50 focus:outline-none"
+        class="min-h-[22px] w-full resize-none bg-transparent text-[14px] font-medium leading-[1.21] tracking-[-0.04em] text-base-content/70 placeholder:text-base-content/50 focus:outline-none"
         :placeholder="placeholder"
         style="max-height: 7.5rem; overflow-y: auto;"
         @input="onInput"

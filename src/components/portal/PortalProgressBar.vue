@@ -1,13 +1,13 @@
 <template>
-  <div class="hidden sm:flex items-center gap-3">
+  <div class="flex items-center gap-3">
     <!-- Stages -->
     <div class="flex items-center gap-0">
       <template v-for="(stage, index) in STAGES" :key="stage.key">
         <!-- Connecting line (not before first stage) -->
         <div
           v-if="index > 0"
-          class="h-px w-6 transition-colors duration-300"
-          :class="isComplete(STAGES[index - 1]!.key) ? 'bg-emerald-400' : 'bg-slate-200'"
+          class="h-px w-3 sm:w-6 transition-colors duration-300"
+          :class="isComplete(STAGES[index - 1]!.key) ? 'bg-success' : 'bg-base-300'"
         />
 
         <!-- Stage indicator -->
@@ -32,7 +32,7 @@
             <span v-else>{{ index + 1 }}</span>
           </div>
           <span
-            class="text-[9px] font-medium tracking-tight transition-colors duration-300"
+            class="hidden sm:block text-[9px] font-medium tracking-tight transition-colors duration-300"
             :class="labelClass(stage.key)"
           >
             {{ stage.label }}
@@ -77,18 +77,18 @@ function isCurrent(key: MilestoneKey): boolean {
 }
 
 function stageClass(key: MilestoneKey, index: number): string {
-  if (isComplete(key)) return 'bg-emerald-500 text-white'
-  if (isCurrent(key)) return 'ring-2 ring-blue-500 bg-white text-blue-600'
+  if (isComplete(key)) return 'bg-success text-success-content'
+  if (isCurrent(key)) return 'ring-2 ring-primary bg-base-100 text-primary'
   // First incomplete that is not current gets subtle highlight if it's next up
   const completedCount = STAGES.filter((s) => isComplete(s.key)).length
-  if (index === completedCount && !isCurrent(key)) return 'ring-2 ring-blue-400/50 bg-white text-blue-400'
-  return 'bg-slate-200 text-slate-400'
+  if (index === completedCount && !isCurrent(key)) return 'ring-2 ring-primary/50 bg-base-100 text-primary/50'
+  return 'bg-base-200 text-base-content/40'
 }
 
 function labelClass(key: MilestoneKey): string {
-  if (isComplete(key)) return 'text-emerald-600'
-  if (isCurrent(key)) return 'text-blue-600'
-  return 'text-slate-400'
+  if (isComplete(key)) return 'text-success'
+  if (isCurrent(key)) return 'text-primary'
+  return 'text-base-content/40'
 }
 
 const completedCount = computed(() => STAGES.filter((s) => isComplete(s.key)).length)
@@ -103,9 +103,9 @@ const statusLabel = computed((): string => {
 
 const statusBadgeClass = computed((): string => {
   const phase = props.onboardingState?.phase
-  if (phase === 'complete') return 'bg-emerald-50 text-emerald-700'
-  if (phase === 'review') return 'bg-amber-50 text-amber-700'
-  if (completedCount.value === 0) return 'bg-slate-100 text-slate-500'
-  return 'bg-blue-50 text-blue-600'
+  if (phase === 'complete') return 'bg-success/10 text-success'
+  if (phase === 'review') return 'bg-warning/10 text-warning'
+  if (completedCount.value === 0) return 'bg-base-200 text-base-content/50'
+  return 'bg-primary/10 text-primary'
 })
 </script>

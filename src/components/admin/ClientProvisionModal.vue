@@ -147,6 +147,7 @@ watch(
                 id="provision-company-name"
                 v-model="companyName"
                 type="text"
+                name="organization"
                 class="input input-bordered input-sm rounded-xl border-base-300/80 w-full"
                 placeholder="Acme Corp"
                 autocomplete="organization"
@@ -164,6 +165,7 @@ watch(
                 id="provision-contact-name"
                 v-model="contactName"
                 type="text"
+                name="name"
                 class="input input-bordered input-sm rounded-xl border-base-300/80 w-full"
                 placeholder="Jane Smith"
                 autocomplete="name"
@@ -181,9 +183,13 @@ watch(
                 id="provision-contact-email"
                 v-model="contactEmail"
                 type="email"
+                name="email"
                 class="input input-bordered input-sm rounded-xl border-base-300/80 w-full"
                 placeholder="jane@acmecorp.com"
                 autocomplete="email"
+                spellcheck="false"
+                autocorrect="off"
+                autocapitalize="off"
                 :disabled="loading"
                 required
               />
@@ -202,7 +208,7 @@ watch(
             <div class="pt-1">
               <button
                 type="submit"
-                class="btn btn-primary btn-sm w-full rounded-xl transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                class="btn btn-primary btn-sm w-full rounded-xl transition-[background-color,transform,box-shadow] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 :disabled="loading"
               >
                 <PhSpinner
@@ -256,7 +262,7 @@ watch(
               type="button"
               :aria-label="copied ? 'Copied!' : 'Copy portal URL'"
               class="btn btn-sm rounded-xl border border-base-300/80 bg-base-200/60 text-base-content
-                     hover:bg-base-200/90 active:scale-[0.98] transition-all focus-visible:outline-none
+                     hover:bg-base-200/90 active:scale-[0.98] transition-[background-color,transform,box-shadow] focus-visible:outline-none
                      focus-visible:ring-2 focus-visible:ring-primary/40"
               @click="copyUrl"
             >
@@ -270,7 +276,7 @@ watch(
         <!-- Done button -->
         <button
           type="button"
-          class="btn btn-primary btn-sm w-full rounded-xl transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          class="btn btn-primary btn-sm w-full rounded-xl transition-[background-color,transform,box-shadow] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           @click="emit('close')"
         >
           Done

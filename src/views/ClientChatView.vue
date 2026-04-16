@@ -14,12 +14,12 @@
         <!-- Search -->
         <button
           type="button"
-          class="mt-4 flex w-full items-center gap-2 rounded-xl border border-[#e8ebf3] bg-white px-3 py-2 text-slate-400 hover:bg-slate-50"
+          class="mt-4 flex w-full items-center gap-2 rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-base-content/40 hover:bg-base-200/60"
           @click="spotlightOpen = true"
         >
           <PhMagnifyingGlass :size="16" />
           <span class="flex-1 text-left text-sm font-medium tracking-[-0.01em]">Search</span>
-          <kbd class="inline-flex items-center gap-1.5 rounded border border-[#e1e5ee] bg-[#f4f6fb] px-1.5 py-0.5 text-[10px] text-[#7d73ff]">
+          <kbd class="inline-flex items-center gap-1.5 rounded border border-base-300 bg-base-200 px-1.5 py-0.5 text-[10px] text-primary">
             <span aria-hidden="true">⌘</span>
             <span>K</span>
           </kbd>
@@ -77,26 +77,25 @@
 
     <template #default="{ collapsed, toggle }">
       <div class="flex h-full flex-col">
-      <header class="-mx-3 -mt-3 mb-4 border-b border-[#e4e4e4] px-4 py-[10px] md:-mx-6 md:-mt-6 md:px-[15px]">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center text-[#0a0a0a]">
-            <button
-              type="button"
-              class="mr-[6px] flex h-8 w-8 items-center justify-center rounded-[5px] text-[#0a0a0a] hover:bg-black/[0.03] transition-colors duration-150"
-              aria-label="Toggle sidebar"
-              :aria-expanded="!collapsed"
-              @click="toggle"
-            >
-              <PhSidebarSimple :size="18" />
-            </button>
-            <span class="mr-[6px] h-3 w-px bg-[#0a0a0a]/40" aria-hidden="true" />
-            <p class="aura-topbar-title text-[14px] tracking-[-0.04em]">Smart Onboarding</p>
-          </div>
-          <!-- Center: milestone progress bar -->
-          <div class="flex flex-1 justify-center">
-            <PortalProgressBar :onboarding-state="onboardingState" />
-          </div>
+      <header class="admin-topbar-shell -mx-3 -mt-3 mb-4 md:-mx-6 md:-mt-6">
+        <!-- Left: collapse + title -->
+        <div class="flex min-w-0 flex-1 items-center gap-3">
+          <button
+            type="button"
+            class="admin-collapse-button"
+            aria-label="Toggle sidebar"
+            :aria-expanded="!collapsed"
+            @click="toggle"
+          >
+            <PhSidebarSimple :size="19" weight="regular" />
+          </button>
+          <span class="admin-topbar-divider" aria-hidden="true" />
+          <h1 class="admin-topbar-title truncate">Smart Onboarding</h1>
         </div>
+        <!-- Center: milestone progress bar -->
+        <PortalProgressBar :onboarding-state="onboardingState" />
+        <!-- Right: balance placeholder -->
+        <div class="flex-1" />
       </header>
 
       <div class="flex flex-1 flex-col overflow-hidden">
@@ -120,16 +119,16 @@
           <!-- WELCOME STATE: no messages -->
           <div v-else-if="showWelcome" key="welcome" class="flex flex-1 flex-col items-center justify-center px-4">
             <div class="relative flex items-center justify-center">
-              <div class="absolute h-24 w-24 rounded-full bg-[#5b6cff]/20 blur-xl orb-glow" />
+              <div class="absolute h-24 w-24 rounded-full bg-primary/20 blur-xl orb-glow" />
               <div class="relative h-20 w-20 rounded-full orb" />
             </div>
-            <h1 class="aura-heading mt-5 text-center text-[28px] font-medium leading-[1.2] tracking-[-0.04em] text-[#0a0a0a]">
+            <h1 class="aura-heading mt-5 text-center text-[28px] font-medium leading-[1.2] tracking-[-0.04em] text-base-content">
               Welcome back,
               <span class="aura-hero-emphasis">
                 {{ clientName || 'there' }}!
               </span>
             </h1>
-            <p class="mt-[10px] max-w-[421px] text-center text-[14px] font-medium leading-[1.22] tracking-[-0.04em] text-[#0a0a0a99]">
+            <p class="mt-[10px] max-w-[421px] text-center text-[14px] font-medium leading-[1.22] tracking-[-0.04em] text-base-content/60">
               {{ clientCompany ? `Let's continue setting up ${clientCompany}. I'm here to guide you through the rest of your onboarding.` : "Let's pick up right where we left off. I'm here to guide you through your onboarding." }}
             </p>
             <div class="mt-9 w-full max-w-[930px]">
