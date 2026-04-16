@@ -113,9 +113,9 @@ router.beforeEach(async (to) => {
     return true
   }
 
-  // Portal routes — allow if authenticated OR a magic token is present in the URL
+  // Portal routes — require authenticated non-admin client
+  // Portal tokens in the URL identify the client after auth but do not bypass auth.
   if (to.meta.requiresPortalAuth) {
-    if (to.params['magicToken']) return true
     if (auth.isAuthenticated && !auth.isAdmin) return true
     return { name: 'portal-login' }
   }
