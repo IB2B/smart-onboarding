@@ -6,12 +6,12 @@
   >
     <div class="aura-msg-column aura-msg-column--assistant">
       <div class="aura-typing-inline">
-        <PhSparkle :size="13" weight="fill" class="text-primary/60" />
+        <PhSparkle :size="13" weight="fill" class="text-primary" />
         <span class="typing-dot" aria-hidden="true" />
         <span class="typing-dot [animation-delay:0.2s]" aria-hidden="true" />
         <span class="typing-dot [animation-delay:0.4s]" aria-hidden="true" />
       </div>
-      <span class="aura-msg-time aura-msg-time--assistant">{{ props.label }}</span>
+      <span class="aura-msg-time aura-msg-time--assistant text-base-content/70">{{ props.label }}</span>
     </div>
   </div>
 </template>

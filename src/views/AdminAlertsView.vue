@@ -48,11 +48,11 @@
             <div
               v-for="chip in summaryChips"
               :key="chip.label"
-              class="flex flex-col gap-1 rounded-xl border border-base-300/80 bg-base-100 px-4 py-4"
+              class="flex flex-col gap-1 rounded-2xl border border-base-300/80 bg-base-100 px-4 py-4"
               :class="chip.borderClass"
             >
               <span
-                class="text-xs font-semibold uppercase tracking-wide"
+                class="text-[11px] font-semibold uppercase tracking-[0.14em]"
                 :class="chip.labelClass"
                 >{{ chip.label }}</span
               >
@@ -86,11 +86,11 @@
                 v-for="pill in severityPills"
                 :key="pill.value"
                 type="button"
-                class="badge badge-sm cursor-pointer rounded-full border-0 px-3 py-2 text-xs font-medium transition-opacity"
+                class="badge badge-sm cursor-pointer rounded-full border-0 px-3 py-2 text-xs font-semibold transition-colors"
                 :class="
                   severityFilter === pill.value
                     ? pill.activeClass
-                    : 'bg-base-200 text-base-content/55 opacity-60 hover:opacity-100'
+                    : 'bg-base-200 text-base-content/65 hover:bg-base-300/70 hover:text-base-content'
                 "
                 @click="severityFilter = pill.value"
               >
@@ -104,11 +104,11 @@
                 v-for="opt in statusOptions"
                 :key="opt.value"
                 type="button"
-                class="badge badge-sm cursor-pointer rounded-full border-0 px-3 py-2 text-xs font-medium transition-opacity"
+                class="badge badge-sm cursor-pointer rounded-full border-0 px-3 py-2 text-xs font-semibold transition-colors"
                 :class="
                   statusFilter === opt.value
-                    ? 'bg-primary/20 text-primary'
-                    : 'bg-base-200 text-base-content/55 opacity-60 hover:opacity-100'
+                    ? 'bg-primary/18 text-primary ring-1 ring-inset ring-primary/12'
+                    : 'bg-base-200 text-base-content/65 hover:bg-base-300/70 hover:text-base-content'
                 "
                 @click="statusFilter = opt.value"
               >
@@ -202,7 +202,7 @@
                   <!-- Category badge -->
                   <td class="hidden px-5 py-3.5 md:table-cell">
                     <span
-                      class="badge badge-sm rounded-full border-0"
+                      class="badge badge-sm rounded-full border-0 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
                       :class="categoryBadgeClass(alert.category)"
                     >
                       {{ categoryLabel(alert.category) }}
@@ -219,11 +219,11 @@
                   <!-- Status badge -->
                   <td class="px-5 py-3.5">
                     <span
-                      class="badge badge-sm rounded-full border-0"
+                      class="badge badge-sm rounded-full border-0 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em]"
                       :class="
                         alert.status === 'open'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-slate-100 text-slate-500'
+                          ? 'bg-error text-error-content ring-1 ring-inset ring-error-content/10'
+                          : 'bg-base-200 text-base-content/65 ring-1 ring-inset ring-base-content/8'
                       "
                     >
                       {{ alert.status === 'open' ? 'Open' : 'Resolved' }}
@@ -326,30 +326,30 @@ const summaryChips = computed(() => [
   {
     label: 'Total Open',
     count: openAlerts.value.length,
-    colorClass: 'text-slate-800 dark:text-slate-500',
-    labelClass: 'text-slate-500',
-    borderClass: 'border-l-4 border-l-slate-300',
+    colorClass: 'text-base-content',
+    labelClass: 'text-base-content/55',
+    borderClass: 'border-l-4 border-l-base-300',
   },
   {
     label: 'Critical',
     count: openAlerts.value.filter((a) => a.severity === 'critical').length,
-    colorClass: 'text-red-600',
-    labelClass: 'text-red-500',
-    borderClass: 'border-l-4 border-l-red-500',
+    colorClass: 'text-error-content',
+    labelClass: 'text-error-content/75',
+    borderClass: 'border-l-4 border-l-error-content',
   },
   {
     label: 'Warning',
     count: openAlerts.value.filter((a) => a.severity === 'warning').length,
-    colorClass: 'text-amber-500',
-    labelClass: 'text-amber-500',
-    borderClass: 'border-l-4 border-l-amber-400',
+    colorClass: 'text-warning-content',
+    labelClass: 'text-warning-content/75',
+    borderClass: 'border-l-4 border-l-warning-content',
   },
   {
     label: 'Info',
     count: openAlerts.value.filter((a) => a.severity === 'info').length,
-    colorClass: 'text-blue-500',
-    labelClass: 'text-blue-400',
-    borderClass: 'border-l-4 border-l-blue-400',
+    colorClass: 'text-info-content',
+    labelClass: 'text-info-content/75',
+    borderClass: 'border-l-4 border-l-info-content',
   },
 ])
 
@@ -357,9 +357,9 @@ const summaryChips = computed(() => [
 
 const severityPills: { value: SeverityFilter; label: string; activeClass: string }[] = [
   { value: 'all', label: 'All', activeClass: 'bg-primary/20 text-primary' },
-  { value: 'critical', label: 'Critical', activeClass: 'bg-red-100 text-red-600' },
-  { value: 'warning', label: 'Warning', activeClass: 'bg-amber-100 text-amber-600' },
-  { value: 'info', label: 'Info', activeClass: 'bg-blue-100 text-blue-600' },
+  { value: 'critical', label: 'Critical', activeClass: 'bg-error text-error-content ring-1 ring-inset ring-error-content/10' },
+  { value: 'warning', label: 'Warning', activeClass: 'bg-warning text-warning-content ring-1 ring-inset ring-warning-content/10' },
+  { value: 'info', label: 'Info', activeClass: 'bg-info text-info-content ring-1 ring-inset ring-info-content/10' },
 ]
 
 const statusOptions: { value: StatusFilter; label: string }[] = [
@@ -403,9 +403,9 @@ function severityIcon(severity: AlertSeverity) {
 }
 
 function severityTextClass(severity: AlertSeverity): string {
-  if (severity === 'critical') return 'text-red-600'
-  if (severity === 'warning') return 'text-amber-500'
-  return 'text-blue-500'
+  if (severity === 'critical') return 'text-error-content'
+  if (severity === 'warning') return 'text-warning-content'
+  return 'text-info-content'
 }
 
 function categoryLabel(category: AdminAlert['category']): string {
@@ -422,14 +422,14 @@ function categoryLabel(category: AdminAlert['category']): string {
 
 function categoryBadgeClass(category: AdminAlert['category']): string {
   const classes: Record<AdminAlert['category'], string> = {
-    review: 'bg-amber-100 text-amber-700',
-    stale: 'bg-amber-100 text-amber-700',
-    ingest: 'bg-blue-100 text-blue-700',
-    milestone: 'bg-violet-100 text-violet-700',
-    message: 'bg-emerald-100 text-emerald-700',
-    ops: 'bg-slate-100 text-slate-600',
+    review: 'bg-warning text-warning-content ring-1 ring-inset ring-warning-content/10',
+    stale: 'bg-warning/75 text-warning-content ring-1 ring-inset ring-warning-content/10',
+    ingest: 'bg-info text-info-content ring-1 ring-inset ring-info-content/10',
+    milestone: 'bg-primary/18 text-primary ring-1 ring-inset ring-primary/10',
+    message: 'bg-success text-success-content ring-1 ring-inset ring-success-content/10',
+    ops: 'bg-base-200 text-base-content/68 ring-1 ring-inset ring-base-content/8',
   }
-  return classes[category] ?? 'bg-slate-100 text-slate-600'
+  return classes[category] ?? 'bg-base-200 text-base-content/68 ring-1 ring-inset ring-base-content/8'
 }
 
 function formatDate(iso: string): string {

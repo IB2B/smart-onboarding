@@ -1,6 +1,6 @@
 <template>
   <form
-    class="rounded-[10px] border border-base-300/70 bg-base-200/70 p-[6px]"
+    class="rounded-[14px] border border-base-300/80 bg-base-200/75 p-[6px]"
     @submit.prevent="handleSubmit"
   >
     <!-- Attachment chips — only rendered when attachments exist -->
@@ -8,14 +8,14 @@
       <span
         v-for="(attachment, index) in attachments"
         :key="index"
-        class="inline-flex h-[30px] items-center gap-[6px] rounded-[6px] border border-black/5 bg-base-100 px-[10px] text-[13px] font-medium tracking-[-0.04em] text-black/50"
+        class="inline-flex h-[30px] items-center gap-[6px] rounded-[8px] border border-base-300/80 bg-base-100 px-[10px] text-[13px] font-medium tracking-[-0.04em] text-base-content/75"
       >
         <PhFileText v-if="attachment.type === 'file'" :size="16" />
         <PhWaveform v-else-if="attachment.type === 'audio'" :size="16" />
         {{ attachment.name }}
         <button
           type="button"
-          class="opacity-70 hover:opacity-100 transition-opacity"
+          class="text-base-content/55 transition-colors hover:text-base-content"
           :aria-label="`Remove ${attachment.name}`"
           @click="emit('remove-attachment', index)"
         >
@@ -24,14 +24,14 @@
       </span>
     </div>
 
-    <div class="rounded-[10px] bg-base-100 px-[14px] py-[8px]">
+    <div class="rounded-[12px] bg-base-100 px-[14px] py-[10px]">
       <label class="sr-only" :for="inputId">{{ label }}</label>
       <textarea
         :id="inputId"
         ref="textareaRef"
         rows="1"
         :value="modelValue"
-        class="min-h-[22px] w-full resize-none bg-transparent text-[14px] font-medium leading-[1.21] tracking-[-0.04em] text-base-content/70 placeholder:text-base-content/50 focus:outline-none"
+        class="min-h-[22px] w-full resize-none bg-transparent text-[14px] font-medium leading-[1.21] tracking-[-0.04em] text-base-content/85 placeholder:text-base-content/50 focus:outline-none"
         :placeholder="placeholder"
         style="max-height: 7.5rem; overflow-y: auto;"
         @input="onInput"
@@ -41,21 +41,21 @@
       <!-- Audio preview row — State 3: recorded blob ready -->
       <div
         v-if="!recorder.isRecording.value && recorder.recordedBlob.value"
-        class="mt-[10px] flex items-center gap-[8px] rounded-[6px] border border-black/5 bg-base-200 px-[10px] py-[6px]"
+        class="mt-[10px] flex items-center gap-[8px] rounded-[10px] border border-base-300/70 bg-base-200/80 px-[10px] py-[8px]"
       >
         <button
           type="button"
-          class="flex h-7 w-7 items-center justify-center rounded-md text-black/60 hover:bg-base-300/60 transition-colors"
+          class="flex h-7 w-7 items-center justify-center rounded-md text-base-content/70 transition-colors hover:bg-base-300/70 hover:text-base-content"
           :aria-label="isPlayingPreview ? 'Pause preview' : 'Play preview'"
           @click="togglePreviewPlayback"
         >
           <PhPlay v-if="!isPlayingPreview" :size="14" weight="fill" />
           <PhPause v-else :size="14" weight="fill" />
         </button>
-        <span class="flex-1 text-[12px] font-medium tracking-[-0.04em] text-black/50">Voice message</span>
+        <span class="flex-1 text-[12px] font-medium tracking-[-0.04em] text-base-content/75">Voice message ready to send</span>
         <button
           type="button"
-          class="flex h-7 w-7 items-center justify-center rounded-md text-error/70 hover:bg-error/10 transition-colors"
+          class="flex h-7 w-7 items-center justify-center rounded-md text-error-content/80 transition-colors hover:bg-error/15 hover:text-error-content"
           aria-label="Discard voice message"
           @click="discardAudio"
         >
@@ -66,8 +66,9 @@
       <div class="mt-[14px] flex items-center justify-between gap-3">
         <button
           type="button"
-          class="inline-flex h-[28px] items-center gap-[5px] rounded-[6px] border border-black/5 bg-base-200 px-3 text-[12px] font-medium tracking-[-0.04em] text-[#191b1dcc] transition-colors hover:bg-base-300/60"
+          class="inline-flex h-[30px] items-center gap-[5px] rounded-[8px] border border-base-300/80 bg-base-200/85 px-3 text-[12px] font-medium tracking-[-0.04em] text-base-content/75 transition-colors hover:bg-base-300/75 hover:text-base-content disabled:cursor-not-allowed disabled:bg-base-200/60 disabled:text-base-content/40"
           aria-label="Attach"
+          :disabled="recorder.isRecording.value"
           @click="$emit('attach')"
         >
           <PhPaperclip :size="14" weight="regular" />
@@ -80,16 +81,16 @@
             <div class="flex flex-col items-center">
               <button
                 type="button"
-                class="flex h-8 w-8 items-center justify-center rounded-md text-black/50 hover:bg-base-200 transition-colors"
-                :class="{ 'text-error/70': recorder.permissionDenied.value }"
+                class="flex h-8 w-8 items-center justify-center rounded-md text-base-content/65 transition-colors hover:bg-base-200 hover:text-base-content"
+                :class="{ 'text-error-content': recorder.permissionDenied.value }"
                 aria-label="Voice input"
-                @click="emit('voice'); recorder.start()"
+                @click="recorder.start()"
               >
                 <PhMicrophone :size="15" weight="regular" />
               </button>
               <span
                 v-if="recorder.permissionDenied.value"
-                class="mt-[2px] text-[10px] font-medium text-error leading-none"
+                class="mt-[2px] text-[10px] font-medium leading-none text-error-content"
               >
                 Mic access denied
               </span>
@@ -98,14 +99,14 @@
 
           <!-- State 2 — Recording in progress -->
           <template v-else-if="recorder.isRecording.value">
-            <div class="flex items-center gap-[6px]">
-              <span class="h-2 w-2 animate-pulse rounded-full bg-error" aria-hidden="true" />
-              <span class="text-[12px] font-medium tabular-nums text-error">
+            <div class="flex items-center gap-[8px] rounded-full border border-error/35 bg-error/14 px-3 py-1.5">
+              <span class="h-2 w-2 animate-pulse rounded-full bg-error-content" aria-hidden="true" />
+              <span class="text-[12px] font-semibold tabular-nums text-error-content">
                 {{ recorder.elapsedFormatted.value }}
               </span>
               <button
                 type="button"
-                class="flex h-8 w-8 items-center justify-center rounded-md text-error hover:bg-error/10 transition-colors"
+                class="flex h-7 w-7 items-center justify-center rounded-md text-error-content transition-colors hover:bg-error/20"
                 aria-label="Stop recording"
                 @click="recorder.stop()"
               >
@@ -116,19 +117,30 @@
 
           <!-- Send button -->
           <button
-            class="btn btn-primary btn-sm aura-action-label h-[30px] min-h-[30px] gap-[6px] rounded-[5px] border-0 px-3 text-[13px] disabled:opacity-45"
+            class="btn btn-primary btn-sm aura-action-label aura-send-button h-[32px] min-h-[32px] gap-[6px] rounded-[8px] border-0 px-3 text-[13px]"
             type="submit"
             :disabled="isSendDisabled"
           >
             <PhPaperPlaneRight :size="16" />
-            Send
-            <span class="inline-flex items-center gap-1.5 rounded-[2px] bg-base-100/20 px-[5px] py-[1px] text-[10px] leading-none">
+            {{ sendButtonLabel }}
+            <span
+              class="inline-flex items-center gap-1.5 rounded-[4px] px-[5px] py-[1px] text-[10px] leading-none"
+              :class="
+                isSendDisabled
+                  ? 'bg-base-content/10 text-base-content/65'
+                  : 'bg-primary-content/18 text-primary-content/90'
+              "
+            >
               <span aria-hidden="true">{{ submitKey }}</span>
               <span>Enter</span>
             </span>
           </button>
         </div>
       </div>
+
+      <p class="mt-3 text-[11px] font-medium tracking-[-0.02em] text-base-content/60">
+        {{ actionHint }}
+      </p>
     </div>
 
     <!-- Recorder error display -->
@@ -182,11 +194,27 @@ const isPlayingPreview = ref(false)
 const previewAudio = ref<HTMLAudioElement | null>(null)
 
 const recorder = useAudioRecorder()
+const hasRecordedAudio = computed(() => recorder.recordedBlob.value !== null)
 
 const isSendDisabled = computed(() => {
   if (recorder.isRecording.value) return true
-  if (recorder.recordedBlob.value) return false
+  if (hasRecordedAudio.value) return false
   return !props.modelValue.trim()
+})
+
+const sendButtonLabel = computed(() => (hasRecordedAudio.value ? 'Send voice' : 'Send'))
+
+const actionHint = computed(() => {
+  if (recorder.isRecording.value) {
+    return 'Recording in progress. Tap stop when you are ready to review the clip.'
+  }
+  if (hasRecordedAudio.value) {
+    return 'Preview your clip, then send it as a voice message or discard it to re-record.'
+  }
+  if (props.modelValue.trim()) {
+    return 'Press Enter to send, or Shift + Enter for a new line.'
+  }
+  return 'Type a message, attach a file, or record a voice note.'
 })
 
 function autoResize() {

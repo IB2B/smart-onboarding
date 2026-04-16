@@ -1,13 +1,13 @@
 <template>
-  <div data-theme="aura-frost" class="min-h-screen bg-base-200 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm">
+  <div data-theme="aura-frost" class="auth-screen flex items-center justify-center p-4">
+    <div class="auth-shell">
       <!-- Logo centered above card -->
-      <div class="flex justify-center mb-6">
+      <div class="auth-logo-wrap">
         <AuraLogo />
       </div>
 
-      <div class="card bg-base-100 shadow-sm border border-base-300/60">
-        <div class="card-body gap-5">
+      <div class="auth-card">
+        <div class="card-body gap-5 p-6 md:p-7">
           <!-- Success state -->
           <template v-if="sent">
             <div class="flex flex-col items-center gap-3 py-2 text-center">
@@ -21,23 +21,26 @@
                 </p>
               </div>
             </div>
-            <p class="text-xs text-base-content/45 text-center">
-              Didn't receive it? Check your spam folder or
-              <button
-                type="button"
-                class="link link-primary font-medium"
-                @click="tryAgain"
-              >
-                send again
-              </button>
-            </p>
+            <div class="auth-panel p-4 text-center">
+              <p class="text-xs text-base-content/60">
+                Didn't receive it? Check your spam folder or
+                <button
+                  type="button"
+                  class="link link-primary font-medium"
+                  @click="tryAgain"
+                >
+                  send again
+                </button>
+              </p>
+            </div>
           </template>
 
           <!-- Form state -->
           <template v-else>
             <div>
-              <h1 class="text-lg font-semibold text-base-content">Sign in to your portal</h1>
-              <p class="text-sm text-base-content/55 mt-0.5">
+              <span class="auth-eyebrow">Client Portal</span>
+              <h1 class="mt-4 text-2xl font-semibold tracking-[-0.03em] text-base-content">Continue your onboarding</h1>
+              <p class="auth-subtle mt-2 text-sm leading-6">
                 Enter your email and we'll send you a sign-in link
               </p>
             </div>
@@ -59,7 +62,7 @@
                   autocapitalize="off"
                   placeholder="you@example.com"
                   :disabled="loading"
-                  class="input input-bordered input-sm w-full"
+                  class="input input-bordered input-sm w-full bg-base-100/80"
                 />
               </label>
 
@@ -83,6 +86,15 @@
                 {{ loading ? 'Sending…' : 'Send sign-in link' }}
               </button>
             </form>
+
+            <div class="auth-panel p-4">
+              <div class="auth-tip-list">
+                <div class="auth-tip-row">
+                  <span class="auth-tip-icon"><PhEnvelopeSimple :size="14" weight="fill" /></span>
+                  <span>We’ll email a secure link to the address your administrator invited.</span>
+                </div>
+              </div>
+            </div>
           </template>
         </div>
       </div>

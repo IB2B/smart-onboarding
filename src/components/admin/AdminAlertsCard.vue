@@ -28,9 +28,9 @@ function clientName(alert: AdminAlert): string {
 }
 
 function severityBadgeClass(severity: AdminAlert['severity']): string {
-  if (severity === 'critical') return 'bg-error/25 text-error-content'
-  if (severity === 'warning') return 'bg-warning/30 text-warning-content'
-  return 'bg-info/25 text-info-content'
+  if (severity === 'critical') return 'bg-error text-error-content ring-1 ring-inset ring-error-content/10'
+  if (severity === 'warning') return 'bg-warning text-warning-content ring-1 ring-inset ring-warning-content/10'
+  return 'bg-info text-info-content ring-1 ring-inset ring-info-content/10'
 }
 </script>
 
@@ -38,7 +38,7 @@ function severityBadgeClass(severity: AdminAlert['severity']): string {
   <article class="rounded-2xl border border-base-300/80 bg-base-100 p-4">
     <header class="mb-3 flex items-center justify-between gap-3">
       <h3 class="aura-heading text-base font-semibold">Recent Alerts</h3>
-      <span class="text-xs text-base-content/55">{{ openAlerts.length }} open</span>
+      <span class="text-xs font-medium text-base-content/60">{{ openAlerts.length }} open</span>
     </header>
 
     <!-- Loading skeleton -->
@@ -81,15 +81,15 @@ function severityBadgeClass(severity: AdminAlert['severity']): string {
 
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium leading-snug">
-            <span class="text-base-content/55">{{ clientName(alert) }}</span>
+            <span class="text-base-content/62">{{ clientName(alert) }}</span>
             <span class="mx-1 text-base-content/30">·</span>
             {{ alert.title }}
           </p>
-          <p class="truncate text-xs text-base-content/55">{{ alert.description }}</p>
+          <p class="truncate text-xs text-base-content/60">{{ alert.description }}</p>
         </div>
 
         <span
-          class="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          class="ml-auto shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]"
           :class="severityBadgeClass(alert.severity)"
         >
           {{ alert.severity }}
@@ -101,7 +101,7 @@ function severityBadgeClass(severity: AdminAlert['severity']): string {
     <div v-if="!loading && openAlerts.length > 0" class="mt-3 border-t border-base-300/60 pt-3">
       <button
         type="button"
-        class="text-xs text-base-content/50 transition-colors hover:text-base-content/80"
+        class="text-xs font-medium text-base-content/56 transition-colors hover:text-base-content/84"
         @click="router.push({ name: 'admin-alerts' })"
       >
         View all {{ openAlerts.length }} open alerts →

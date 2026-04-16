@@ -26,12 +26,12 @@
       <button
         v-if="reviewAlertCount > 0"
         type="button"
-        class="relative btn btn-sm rounded-lg border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 cursor-pointer"
+        class="relative btn btn-sm rounded-lg border-warning/40 bg-warning/75 text-warning-content hover:bg-warning cursor-pointer"
         aria-label="View clients needing review"
         @click="router.push('/admin/alerts')"
       >
         <PhBell :size="16" />
-        <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white leading-none">
+        <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-warning-content text-[9px] font-bold text-warning leading-none">
           {{ reviewAlertCount }}
         </span>
       </button>

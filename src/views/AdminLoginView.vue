@@ -1,17 +1,18 @@
 <template>
-  <div data-theme="aura-frost" class="min-h-screen bg-base-200 flex items-center justify-center p-4">
-    <div class="w-full max-w-sm">
+  <div data-theme="aura-frost" class="auth-screen flex items-center justify-center p-4">
+    <div class="auth-shell">
       <!-- Logo centered above card -->
-      <div class="flex justify-center mb-6">
+      <div class="auth-logo-wrap">
         <AuraLogo />
       </div>
 
       <!-- ── Login form ───────────────────────────────────────────────── -->
-      <div v-if="mode === 'login'" class="card bg-base-100 shadow-sm border border-base-300/60">
-        <div class="card-body gap-5">
+      <div v-if="mode === 'login'" class="auth-card">
+        <div class="card-body gap-5 p-6 md:p-7">
           <div>
-            <h1 class="text-lg font-semibold text-base-content">Admin Portal</h1>
-            <p class="text-sm text-base-content/55 mt-0.5">Sign in to continue</p>
+            <span class="auth-eyebrow">Admin Portal</span>
+            <h1 class="mt-4 text-2xl font-semibold tracking-[-0.03em] text-base-content">Operate the onboarding desk</h1>
+            <p class="auth-subtle mt-2 text-sm leading-6">Sign in to manage invites, watch onboarding health, and keep client handoffs moving.</p>
           </div>
 
           <form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
@@ -31,7 +32,7 @@
                 autocapitalize="off"
                 placeholder="admin@example.com"
                 :disabled="loading"
-                class="input input-bordered input-sm w-full"
+                class="input input-bordered input-sm w-full bg-base-100/80"
               />
             </label>
 
@@ -48,7 +49,7 @@
                 autocomplete="current-password"
                 placeholder="••••••••"
                 :disabled="loading"
-                class="input input-bordered input-sm w-full"
+                class="input input-bordered input-sm w-full bg-base-100/80"
               />
             </label>
 
@@ -72,12 +73,21 @@
               {{ loading ? 'Signing in…' : 'Sign In' }}
             </button>
           </form>
+
+          <div class="auth-panel p-4">
+            <div class="auth-tip-list">
+              <div class="auth-tip-row">
+                <span class="auth-tip-icon"><PhLockKey :size="14" weight="fill" /></span>
+                <span>Use your admin credentials to access alerts, client monitoring, and onboarding actions.</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- ── Set new password form ────────────────────────────────────── -->
-      <div v-else class="card bg-base-100 shadow-sm border border-base-300/60">
-        <div class="card-body gap-5">
+      <div v-else class="auth-card">
+        <div class="card-body gap-5 p-6 md:p-7">
           <div class="flex items-center gap-2">
             <PhLockKey :size="20" class="text-primary shrink-0" aria-hidden="true" />
             <div>
@@ -100,7 +110,7 @@
                 autocomplete="new-password"
                 placeholder="Min. 8 characters"
                 :disabled="resetLoading"
-                class="input input-bordered input-sm w-full"
+                class="input input-bordered input-sm w-full bg-base-100/80"
               />
             </label>
 
@@ -117,7 +127,7 @@
                 autocomplete="new-password"
                 placeholder="Re-enter your new password"
                 :disabled="resetLoading"
-                class="input input-bordered input-sm w-full"
+                class="input input-bordered input-sm w-full bg-base-100/80"
               />
             </label>
 
@@ -149,7 +159,7 @@
 
           <button
             type="button"
-            class="text-sm text-base-content/55 hover:text-base-content transition-colors text-left"
+            class="text-left text-sm text-base-content/60 transition-colors hover:text-base-content"
             @click="mode = 'login'"
           >
             ← Back to sign in

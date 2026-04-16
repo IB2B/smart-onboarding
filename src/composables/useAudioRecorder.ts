@@ -89,6 +89,10 @@ export function useAudioRecorder(options?: { maxDurationSeconds?: number }): Use
 
   async function start(): Promise<void> {
     if (isRecording.value) return
+    if (!isSupported.value || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      error.value = 'Voice recording is not supported in this browser.'
+      return
+    }
 
     error.value = null
     permissionDenied.value = false
@@ -130,8 +134,14 @@ export function useAudioRecorder(options?: { maxDurationSeconds?: number }): Use
       if (isMounted) {
         const blobOptions = mimeType ? { type: mimeType } : {}
         const blob = new Blob(chunks, blobOptions)
-        recordedBlob.value = blob
-        previewUrl.value = URL.createObjectURL(blob)
+        if (blob.size === 0) {
+          recordedBlob.value = null
+          previewUrl.value = null
+          error.value = 'No audio was captured. Please try recording again.'
+        } else {
+          recordedBlob.value = blob
+          previewUrl.value = URL.createObjectURL(blob)
+        }
       }
 
       chunks = []

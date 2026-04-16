@@ -25,7 +25,7 @@
             <p class="mt-1.5 text-xs" :class="m.helpTextClass">{{ m.helpText }}</p>
           </div>
           <div class="flex shrink-0 flex-col items-end gap-2">
-            <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold" :class="m.badgeClass">
+            <span class="inline-flex min-w-[5.5rem] items-center justify-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" :class="m.badgeClass">
               {{ m.badge }}
             </span>
             <div class="flex h-9 w-9 items-center justify-center rounded-xl" :class="m.iconBg">
@@ -51,13 +51,13 @@
           <component :is="m.icon" :size="16" weight="fill" :class="m.iconColor" />
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-base-content/40">{{ m.label }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-base-content/48">{{ m.label }}</p>
           <div v-if="loading" class="mt-0.5 h-5 w-12 animate-pulse rounded bg-base-200" />
           <p v-else class="aura-heading text-[22px] font-semibold leading-tight tracking-[-0.03em] text-base-content">
             {{ m.value }}
           </p>
         </div>
-        <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium" :class="m.badgeClass">
+        <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" :class="m.badgeClass">
           {{ m.badge }}
         </span>
       </article>
@@ -122,7 +122,7 @@ const primaryMetrics = computed<PrimaryMetric[]>(() => [
     value: props.summary.active,
     helpText: 'Clients currently active',
     badge: 'live',
-    badgeClass: 'bg-success/30 text-success-content',
+    badgeClass: 'bg-success text-success-content ring-1 ring-inset ring-success-content/10',
     icon: PhCheckCircle,
     cardClass: 'bg-success/10 border border-success/25',
     valueClass: 'text-success-content',
@@ -137,7 +137,7 @@ const primaryMetrics = computed<PrimaryMetric[]>(() => [
     value: props.summary.blocked,
     helpText: 'Need manual intervention',
     badge: 'review',
-    badgeClass: 'bg-error/25 text-error-content',
+    badgeClass: 'bg-error text-error-content ring-1 ring-inset ring-error-content/10',
     icon: PhLockSimple,
     cardClass: 'bg-error/10 border border-error/25',
     valueClass: 'text-error-content',
@@ -153,15 +153,15 @@ const primaryMetrics = computed<PrimaryMetric[]>(() => [
     helpText: 'Signal quality score',
     badge: props.summary.ingestHealth >= 80 ? 'healthy' : props.summary.ingestHealth >= 50 ? 'degraded' : 'critical',
     badgeClass: props.summary.ingestHealth >= 80
-      ? 'bg-primary/20 text-primary'
+      ? 'bg-primary/18 text-primary ring-1 ring-inset ring-primary/15'
       : props.summary.ingestHealth >= 50
-        ? 'bg-warning/30 text-warning-content'
-        : 'bg-error/25 text-error-content',
+        ? 'bg-warning text-warning-content ring-1 ring-inset ring-warning-content/10'
+        : 'bg-error text-error-content ring-1 ring-inset ring-error-content/10',
     icon: PhPulse,
     cardClass: 'bg-primary/10 border border-primary/20',
     valueClass: 'text-primary',
     labelClass: 'text-primary/70',
-    helpTextClass: 'text-primary/60',
+    helpTextClass: 'text-primary/72',
     iconBg: 'bg-primary/20',
     iconColor: 'text-primary',
     barClass: 'bg-primary',
@@ -173,7 +173,7 @@ const secondaryMetrics = computed<SecondaryMetric[]>(() => [
     label: 'Invited',
     value: props.summary.invited,
     badge: 'waiting',
-    badgeClass: 'bg-info/30 text-info-content',
+    badgeClass: 'bg-info text-info-content ring-1 ring-inset ring-info-content/10',
     icon: PhEnvelopeSimple,
     iconBg: 'bg-info/15',
     iconColor: 'text-info-content',
@@ -182,7 +182,7 @@ const secondaryMetrics = computed<SecondaryMetric[]>(() => [
     label: 'Completion avg',
     value: `${props.summary.completionAverage}%`,
     badge: 'avg',
-    badgeClass: 'bg-base-300 text-base-content/70',
+    badgeClass: 'bg-base-200 text-base-content/72 ring-1 ring-inset ring-base-content/8',
     icon: PhChartLine,
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
@@ -191,7 +191,7 @@ const secondaryMetrics = computed<SecondaryMetric[]>(() => [
     label: 'Stale Clients',
     value: props.summary.staleClients,
     badge: 'stale',
-    badgeClass: 'bg-warning/30 text-warning-content',
+    badgeClass: 'bg-warning text-warning-content ring-1 ring-inset ring-warning-content/10',
     icon: PhClock,
     iconBg: 'bg-warning/15',
     iconColor: 'text-warning-content',
