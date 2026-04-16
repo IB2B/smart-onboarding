@@ -16,7 +16,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     public?: boolean
     requiresRole?: 'admin'
-    requiresPortalAuth?: boolean // allow if authenticated client OR legacy magicToken param present
+    requiresPortalAuth?: boolean // allow if authenticated non-admin client
   }
 }
 
@@ -70,7 +70,7 @@ const router = createRouter({
       meta: { requiresRole: 'admin' },
     },
     {
-      path: '/portal/chat/:magicToken?',
+      path: '/portal/chat',
       name: 'portal-chat',
       component: ClientChatView,
       meta: { requiresPortalAuth: true },

@@ -89,7 +89,7 @@ export class MockApiAdapter implements ApiAdapter {
     return structuredClone(mockThreadByClient[key] ?? [])
   }
 
-  async getPortalSession(_token?: string): Promise<ChatSessionResponse> {
+  async getPortalSession(): Promise<ChatSessionResponse> {
     await wait(160)
     const mock = structuredClone(mockPortalSession)
     return { ...mock, onboardingState: null }
@@ -286,7 +286,7 @@ export class MockApiAdapter implements ApiAdapter {
     await wait(400)
     return {
       clientId: crypto.randomUUID(),
-      portalUrl: `${window.location.origin}/portal/chat/mock-token`,
+      portalUrl: `${window.location.origin}/portal/chat`,
     }
   }
 }

@@ -210,7 +210,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { uploadAudioBlob } from '@/lib/audio-upload'
-import { useRoute } from 'vue-router'
 import {
   PhArrowDown,
   PhClockCounterClockwise,
@@ -238,7 +237,6 @@ import { useAutoScroll } from '@/composables/useAutoScroll'
 
 const store = useSpecLabStore()
 const auth = useAuthStore()
-const route = useRoute()
 const draft = ref('')
 const spotlightOpen = ref(false)
 const attachments = ref<Array<{ name: string; type: 'file' | 'audio'; file?: File }>>([])
@@ -282,17 +280,6 @@ watch(
   },
 )
 
-function normalizeToken(raw: unknown): string | undefined {
-  if (typeof raw === 'string') return raw
-  if (Array.isArray(raw) && typeof raw[0] === 'string') return raw[0]
-  return undefined
-}
-
-// Resolve portal token: prefer route param (demo/legacy), fall back to auth-based lookup (no token)
-function resolvedToken(): string | undefined {
-  return normalizeToken(route.params.magicToken)
-}
-
 let resolvedClientId = ''
 let resolvedSessionId = ''
 
@@ -326,7 +313,7 @@ async function loadClientBrief() {
 onMounted(async () => {
   try {
     await auth.init()
-    const session = await apiClient.getPortalSession(resolvedToken())
+    const session = await apiClient.getPortalSession()
     resolvedClientId = session.session.clientId
     resolvedSessionId = `session-${resolvedClientId}`
     clientName.value = session.session.contactName
@@ -396,7 +383,6 @@ async function handleSendAudio(blob: Blob): Promise<void> {
       clientId: resolvedClientId,
       message: '[Voice message]',
       provider: 'openrouter',
-      token: resolvedToken(),
     })
     sessionMessages.value = [...sessionMessages.value, response.message]
     applySnapshotDelta(response.snapshotDelta)
@@ -449,7 +435,6 @@ async function sendMessage() {
       clientId: resolvedClientId,
       message: messageText,
       provider: 'openrouter',
-      token: resolvedToken(),
     })
     sessionMessages.value = [...sessionMessages.value, response.message]
     applySnapshotDelta(response.snapshotDelta)

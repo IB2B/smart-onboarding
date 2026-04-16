@@ -12,7 +12,7 @@ import type {
 const adapterMocks = vi.hoisted(() => ({
   getClients: vi.fn(async () => [{ id: 'cl_1', company: 'Northstar Dental' }]),
   getClientThread: vi.fn(async (clientId: string) => [{ id: `thread_${clientId}`, content: 'ok' }]),
-  getPortalSession: vi.fn(async (token?: string): Promise<ChatSessionResponse> => ({
+  getPortalSession: vi.fn(async (): Promise<ChatSessionResponse> => ({
     session: {
       clientId: 'cl_1',
       contactName: 'Demo User',
@@ -22,7 +22,7 @@ const adapterMocks = vi.hoisted(() => ({
         {
           id: 'msg_1',
           role: 'assistant',
-          content: `session:${token ?? 'none'}`,
+          content: 'Welcome!',
           createdAt: new Date().toISOString(),
         },
       ],
@@ -167,7 +167,7 @@ describe('api client wiring', () => {
   it('delegates existing client and session requests to the adapter', async () => {
     const clients = await apiClient.getClients()
     const thread = await apiClient.getClientThread('cl_1')
-    const session = await apiClient.getPortalSession('token-123')
+    const session = await apiClient.getPortalSession()
 
     expect(clients).toEqual([{ id: 'cl_1', company: 'Northstar Dental' }])
     expect(thread).toEqual([{ id: 'thread_cl_1', content: 'ok' }])
@@ -179,10 +179,10 @@ describe('api client wiring', () => {
         businessModel: 'demo',
       },
     })
-    expect(session.session.messages[0]?.content).toContain('token-123')
+    expect(session.session.messages[0]?.content).toBe('Welcome!')
     expect(adapterMocks.getClients).toHaveBeenCalledTimes(1)
     expect(adapterMocks.getClientThread).toHaveBeenCalledWith('cl_1')
-    expect(adapterMocks.getPortalSession).toHaveBeenCalledWith('token-123')
+    expect(adapterMocks.getPortalSession).toHaveBeenCalledWith()
   })
 
   it('injects request metadata when sending portal messages', async () => {
@@ -194,7 +194,6 @@ describe('api client wiring', () => {
       clientId: 'cl_1',
       message: 'hello world',
       provider: 'openrouter',
-      token: 'token-123',
     })
 
     expect(response.message.content).toContain('hello world')
@@ -204,7 +203,6 @@ describe('api client wiring', () => {
       requestId: `req_${now}`,
       message: 'hello world',
       provider: 'openrouter',
-      token: 'token-123',
     })
   })
 

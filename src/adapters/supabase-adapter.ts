@@ -73,40 +73,6 @@ function buildClientFromRow(
   return { client, mappedState }
 }
 
-async function resolvePortalToken(token: string): Promise<string> {
-  const normalizedToken = token.trim()
-  if (!normalizedToken) throw new Error('Portal token is missing')
-
-  // Look up the token in the portal_tokens table first (new path)
-  const { data: tokenRow, error: tokenError } = await supabase
-    .from('portal_tokens')
-    .select('client_id, expires_at')
-    .eq('token', normalizedToken)
-    .maybeSingle()
-
-  if (tokenError) throw new Error(`resolvePortalToken: ${tokenError.message}`)
-
-  if (tokenRow) {
-    const row = tokenRow as { client_id: string; expires_at: string }
-    if (new Date(row.expires_at) < new Date()) {
-      throw new Error('Portal link has expired')
-    }
-    return row.client_id
-  }
-
-  // Legacy fallback: old links used the client UUID directly in the route.
-  // Verify it maps to a real client before trusting it.
-  const { data: clientRow, error: clientError } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('id', normalizedToken)
-    .maybeSingle()
-
-  if (clientError) throw new Error(`resolvePortalToken (legacy): ${clientError.message}`)
-  if (!clientRow) throw new Error('Invalid or expired portal link')
-
-  return (clientRow as Record<string, unknown>)['id'] as string
-}
 
 // Fetch all clients + their onboarding states in two explicit queries, then
 // join in JS. This is more reliable than the embedded-join syntax
@@ -160,31 +126,24 @@ export class SupabaseApiAdapter implements ApiAdapter {
     return data.map((row) => mapMessageRow(row as Record<string, unknown>))
   }
 
-  async getPortalSession(token?: string): Promise<ChatSessionResponse> {
-    // Resolve client ID from either the magic token (legacy/demo) or the authenticated user's email
-    let clientId: string
+  async getPortalSession(): Promise<ChatSessionResponse> {
+    // Resolve client ID from the authenticated user's email (magic link flow)
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData.user) throw new Error('getPortalSession: not authenticated')
 
-    if (token) {
-      clientId = await resolvePortalToken(token)
-    } else {
-      // No token — resolve via authenticated user's email (magic link flow)
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData.user) throw new Error('getPortalSession: not authenticated')
+    const email = userData.user.email
+    if (!email) throw new Error('getPortalSession: authenticated user has no email')
 
-      const email = userData.user.email
-      if (!email) throw new Error('getPortalSession: authenticated user has no email')
+    const { data: clientIdRow, error: clientLookupError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('contact_email', email)
+      .maybeSingle()
 
-      const { data: clientRow, error: clientLookupError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('contact_email', email)
-        .maybeSingle()
+    if (clientLookupError) throw new Error(`getPortalSession (email lookup): ${clientLookupError.message}`)
+    if (!clientIdRow) throw new Error(`getPortalSession: no client found for email ${email}`)
 
-      if (clientLookupError) throw new Error(`getPortalSession (email lookup): ${clientLookupError.message}`)
-      if (!clientRow) throw new Error(`getPortalSession: no client found for email ${email}`)
-
-      clientId = (clientRow as Record<string, unknown>)['id'] as string
-    }
+    const clientId = (clientIdRow as Record<string, unknown>)['id'] as string
 
     const [clientResult, stateResult, messagesResult] = await Promise.all([
       supabase.from('clients').select('*').eq('id', clientId).maybeSingle(),
@@ -635,20 +594,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
       throw new Error(stateError.message)
     }
 
-    // Generate a URL-safe portal token with 30-day expiry
-    const portalToken = crypto.randomUUID()
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-
-    const { error: tokenError } = await supabase.from('portal_tokens').insert({
-      client_id: clientId,
-      token: portalToken,
-      expires_at: expiresAt,
-    })
-
     const origin = window.location.origin
-    const portalUrl = tokenError
-      ? `${origin}/portal/chat`
-      : `${origin}/portal/chat/${portalToken}`
 
     // Send magic link — failure after DB success returns a partial result so
     // the caller can still surface the portal URL for manual recovery.
@@ -659,7 +605,7 @@ export class SupabaseApiAdapter implements ApiAdapter {
 
     return {
       clientId,
-      portalUrl,
+      portalUrl: `${origin}/portal/chat`,
       emailError: authError ? authError.message : undefined,
     }
   }

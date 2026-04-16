@@ -246,7 +246,6 @@ export interface ChatRequest {
   requestId: string
   message: string
   provider: AiProvider
-  token?: string
 }
 
 export interface ChatResponse {
@@ -290,7 +289,7 @@ export interface ProvisionClientResult {
 export interface ApiAdapter {
   getClients(): Promise<ClientSummary[]>
   getClientThread(clientId: string): Promise<ThreadMessage[]>
-  getPortalSession(token?: string): Promise<ChatSessionResponse>
+  getPortalSession(): Promise<ChatSessionResponse>
   sendPortalMessage(request: ChatRequest): Promise<ChatResponse>
   persistWidgetResponse(messageId: string, value: string | number): Promise<void>
   getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot>

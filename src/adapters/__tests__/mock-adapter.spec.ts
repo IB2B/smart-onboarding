@@ -43,7 +43,7 @@ describe('mock adapter', () => {
 
   it('returns cloned session payload and provider-aware message response', async () => {
     const adapter = await createAdapter()
-    const sessionA = await adapter.getPortalSession('token-a')
+    const sessionA = await adapter.getPortalSession()
     sessionA.session.messages.push({
       id: 'local',
       role: 'client',
@@ -51,7 +51,7 @@ describe('mock adapter', () => {
       createdAt: new Date().toISOString(),
     })
 
-    const sessionB = await adapter.getPortalSession('token-a')
+    const sessionB = await adapter.getPortalSession()
     expect(sessionB.session.messages.find((item) => item.id === 'local')).toBeUndefined()
 
     const response = await adapter.sendPortalMessage({

@@ -43,8 +43,8 @@ class ApiClient {
     return this.adapter.getClientThread(clientId).then(assertThreadMessages)
   }
 
-  getPortalSession(token?: string) {
-    return this.adapter.getPortalSession(token).then(assertChatSession)
+  getPortalSession() {
+    return this.adapter.getPortalSession().then(assertChatSession)
   }
 
   getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot> {
@@ -84,7 +84,6 @@ class ApiClient {
     clientId: string
     message: string
     provider?: AiProvider
-    token?: string
   }) {
     const request: ChatRequest = {
       sessionId: params.sessionId,
@@ -92,7 +91,6 @@ class ApiClient {
       requestId: `req_${Date.now()}`,
       message: params.message,
       provider: params.provider ?? 'openai',
-      token: params.token,
     }
     return this.adapter.sendPortalMessage(request)
   }
