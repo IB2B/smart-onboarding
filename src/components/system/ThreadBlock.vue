@@ -13,7 +13,24 @@
     <div class="aura-msg-column" :class="columnClass">
       <article class="aura-msg-surface" :class="surfaceClass">
         <div v-if="message.role !== 'client'" class="aura-markdown prose prose-sm max-w-none" v-html="renderedHtml"></div>
-        <p v-else>{{ message.content }}</p>
+        <template v-else>
+          <div v-if="clientAttachments.length > 0" class="mb-2 flex flex-col gap-2">
+            <MessageAudioPlayer
+              v-for="(att, i) in clientAttachments.filter((a) => a.type === 'audio')"
+              :key="`audio-${i}`"
+              :preview-url="att.previewUrl"
+              :duration-sec="att.durationSec"
+              :transcript="att.transcript"
+            />
+            <MessageFileChip
+              v-for="(att, i) in clientAttachments.filter((a) => a.type === 'document')"
+              :key="`file-${i}`"
+              :name="att.name"
+              :mime="att.mime"
+            />
+          </div>
+          <p v-if="displayContent">{{ displayContent }}</p>
+        </template>
 
         <template v-if="props.message.widget_payload">
           <div class="mt-3">
@@ -51,10 +68,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ThreadMessage } from '@/contracts/api'
+import type { MessageAttachment, ThreadMessage } from '@/contracts/api'
 import { PhArrowClockwise, PhShieldStar, PhSparkle } from '@phosphor-icons/vue'
 import ChoiceCard from '@/components/chat/widgets/ChoiceCard.vue'
 import RatingSlider from '@/components/chat/widgets/RatingSlider.vue'
+import MessageFileChip from '@/components/system/MessageFileChip.vue'
+import MessageAudioPlayer from '@/components/system/MessageAudioPlayer.vue'
 import { renderMarkdown } from '@/lib/markdown'
 
 const props = defineProps<{
@@ -99,6 +118,50 @@ const avatarClass = computed(() =>
 const renderedHtml = computed(() =>
   props.message.role !== 'client' ? renderMarkdown(props.message.content) : ''
 )
+
+// --- Attachment rendering helpers for client messages ---
+
+const AUDIO_PATTERN = /^I've sent (?:a voice note|voice notes and files) \("([^"]+)"\)/
+const DOC_PATTERN = /Use the newly uploaded sources? "([^"]+(?:, "[^"]+)*)"(?: and "([^"]+)")? in your response/
+
+function parseHistoricalAttachments(content: string): MessageAttachment[] {
+  const audioMatch = AUDIO_PATTERN.exec(content)
+  if (audioMatch) {
+    return [{ type: 'audio', name: audioMatch[1] ?? 'Voice note' }]
+  }
+  const docMatch = DOC_PATTERN.exec(content)
+  if (docMatch) {
+    const titles = content.match(/"([^"]+)"/g)?.map((t) => t.slice(1, -1)) ?? []
+    return titles.map((name) => ({ type: 'document' as const, name }))
+  }
+  return []
+}
+
+const clientAttachments = computed<MessageAttachment[]>(() => {
+  if (props.message.role !== 'client') return []
+  if (props.message.attachments && props.message.attachments.length > 0) {
+    return props.message.attachments
+  }
+  return parseHistoricalAttachments(props.message.content)
+})
+
+const displayContent = computed(() => {
+  if (props.message.role !== 'client') return props.message.content
+  if (props.message.attachments !== undefined) {
+    return props.message.content
+  }
+  // Historical: strip the injected instruction suffix so only the user's typed text remains
+  const content = props.message.content
+  const audioIdx = content.indexOf("\n\nI've sent ")
+  if (audioIdx !== -1) return content.slice(0, audioIdx).trim()
+  const docIdx = content.indexOf('\n\nUse the newly uploaded')
+  if (docIdx !== -1) return content.slice(0, docIdx).trim()
+  // If the whole message IS an instruction (no user text prefix), hide it when we have chips
+  if (clientAttachments.value.length > 0 && (AUDIO_PATTERN.test(content) || DOC_PATTERN.test(content))) {
+    return ''
+  }
+  return content
+})
 
 const formattedTime = computed(() => {
   const d = new Date(props.message.createdAt)

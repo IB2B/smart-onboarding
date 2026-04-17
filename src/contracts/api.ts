@@ -201,6 +201,15 @@ export interface ToolCallRecord {
   arguments: Record<string, unknown>
 }
 
+export interface MessageAttachment {
+  type: 'document' | 'audio'
+  name: string
+  mime?: string
+  previewUrl?: string
+  transcript?: string
+  durationSec?: number
+}
+
 export interface ThreadMessage {
   id: string
   role: 'client' | 'assistant' | 'operator'
@@ -210,6 +219,7 @@ export interface ThreadMessage {
   widget_response?: string | number
   tool_calls?: ToolCallRecord[]
   failed?: boolean
+  attachments?: MessageAttachment[]
 }
 
 export interface ChatSession {

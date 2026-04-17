@@ -184,7 +184,7 @@ const emit = defineEmits<{
   submit: []
   attach: []
   voice: []
-  'send-audio': [blob: Blob]
+  'send-audio': [blob: Blob, durationSec: number]
   'remove-attachment': [index: number]
 }>()
 
@@ -243,7 +243,7 @@ function onKeydown(e: KeyboardEvent) {
 
 function handleSubmit() {
   if (recorder.recordedBlob.value) {
-    emit('send-audio', recorder.recordedBlob.value)
+    emit('send-audio', recorder.recordedBlob.value, recorder.elapsedSeconds.value)
     stopPreviewPlayback()
     recorder.discard()
     return

@@ -252,7 +252,7 @@ import ThreadBlock from '@/components/system/ThreadBlock.vue'
 import TypingIndicator from '@/components/chat/TypingIndicator.vue'
 import PortalProgressBar from '@/components/portal/PortalProgressBar.vue'
 import PostOnboardingView from '@/components/portal/PostOnboardingView.vue'
-import type { OnboardingBrief, OnboardingState, ThreadMessage } from '@/contracts/api'
+import type { MessageAttachment, OnboardingBrief, OnboardingState, ThreadMessage } from '@/contracts/api'
 import { useSpecLabStore } from '@/stores/spec-lab'
 import { useHotkey } from '@/composables/useHotkey'
 import { useAutoScroll } from '@/composables/useAutoScroll'
@@ -368,6 +368,7 @@ type UploadedSeedRef = {
   id: string
   title: string
   sourceType: 'document' | 'audio'
+  transcript?: string
 }
 
 function onFileSelected(event: Event): void {
@@ -425,6 +426,7 @@ async function waitForSeedProcessing(seedIds: string[]): Promise<{
             id: row.id,
             title: row.title,
             sourceType: row.sourceType as 'document' | 'audio',
+            transcript: row.rawTranscript,
           })),
         failed: tracked
           .filter((row) => row.ingestStatus === 'failed')
@@ -449,6 +451,7 @@ async function waitForSeedProcessing(seedIds: string[]): Promise<{
         id: row.id,
         title: row.title,
         sourceType: row.sourceType as 'document' | 'audio',
+        transcript: row.rawTranscript,
       })),
     failed: tracked
       .filter((row) => row.ingestStatus === 'failed')
@@ -478,20 +481,31 @@ function buildSubmissionMessage(messageText: string, uploadedSeeds: UploadedSeed
   const trimmed = messageText.trim()
   if (uploadedSeeds.length === 0) return trimmed
 
-  const titles = formatSeedTitles(uploadedSeeds)
-  const hasAudio = uploadedSeeds.some((seed) => seed.sourceType === 'audio')
-  const sourceLabel = uploadedSeeds.length === 1 ? 'source' : 'sources'
-  const instruction = hasAudio
-    ? `Use the newly processed ${sourceLabel} ${titles}, including any voice transcription, in your response.`
-    : `Use the newly uploaded ${sourceLabel} ${titles} in your response.`
+  const audioSeeds = uploadedSeeds.filter((s) => s.sourceType === 'audio')
+  const docSeeds = uploadedSeeds.filter((s) => s.sourceType === 'document')
 
-  if (trimmed) {
-    return `${trimmed}\n\n${instruction}`
+  const parts: string[] = []
+  if (trimmed) parts.push(trimmed)
+
+  // Embed transcripts directly so the AI sees the actual content regardless of RAG quality
+  for (const seed of audioSeeds) {
+    if (seed.transcript) {
+      parts.push(`[Voice note transcription — "${seed.title}"]\n${seed.transcript}\n[End of transcription]`)
+    }
   }
 
-  return hasAudio
-    ? `I've sent ${uploadedSeeds.length === 1 ? 'a voice note' : 'voice notes and files'} (${titles}). Please review the transcription and respond using what I shared.`
-    : `I've uploaded ${sourceLabel} ${titles}. Please review ${uploadedSeeds.length === 1 ? 'it' : 'them'} and respond using the contents.`
+  if (audioSeeds.length > 0 && audioSeeds.every((s) => !s.transcript)) {
+    const titles = formatSeedTitles(audioSeeds)
+    parts.push(`Use the newly processed voice ${audioSeeds.length === 1 ? 'note' : 'notes'} ${titles} in your response.`)
+  }
+
+  if (docSeeds.length > 0) {
+    const titles = formatSeedTitles(docSeeds)
+    const sourceLabel = docSeeds.length === 1 ? 'source' : 'sources'
+    parts.push(`Use the newly uploaded ${sourceLabel} ${titles} in your response.`)
+  }
+
+  return parts.join('\n\n')
 }
 
 async function uploadAndProcessAttachments(items: Array<{ name: string; file: File }>): Promise<UploadedSeedRef[]> {
@@ -544,10 +558,28 @@ function applySnapshotDelta(delta: Partial<{ phase?: string; milestones?: Record
   }
 }
 
-async function handleSendAudio(blob: Blob): Promise<void> {
+async function handleSendAudio(blob: Blob, durationSec = 0): Promise<void> {
   if (!resolvedClientId || sending.value) return
   sending.value = true
   showWelcome.value = false
+
+  // Create a local object URL for in-session playback
+  const previewUrl = URL.createObjectURL(blob)
+  const tempId = `user_${Date.now()}`
+
+  // Show the audio bubble immediately (optimistic)
+  sessionMessages.value = [
+    ...sessionMessages.value,
+    {
+      id: tempId,
+      role: 'client',
+      content: '',
+      createdAt: new Date().toISOString(),
+      attachments: [{ type: 'audio', name: 'Voice note', previewUrl, durationSec }],
+    },
+  ]
+  scrollToBottom('instant')
+
   try {
     loadError.value = ''
     const extension = deriveAudioExtension(blob.type || 'audio/webm')
@@ -570,22 +602,29 @@ async function handleSendAudio(blob: Blob): Promise<void> {
       throw new Error('Your voice note is still being transcribed. Please wait a few seconds and try again.')
     }
 
-    const messageText = buildSubmissionMessage('', processed.ready)
+    const transcript = processed.ready[0]?.transcript
+    // Update the optimistic bubble with the transcript for display
+    sessionMessages.value = sessionMessages.value.map((m) =>
+      m.id === tempId
+        ? { ...m, attachments: [{ type: 'audio', name: 'Voice note', previewUrl, durationSec, transcript }] }
+        : m,
+    )
+
+    const submissionMessage = buildSubmissionMessage('', processed.ready)
     const response = await apiClient.sendPortalMessage({
       sessionId: resolvedSessionId,
       clientId: resolvedClientId,
-      message: messageText,
+      message: submissionMessage,
       provider: 'openai',
     })
-    sessionMessages.value = [
-      ...sessionMessages.value,
-      { id: `user_${Date.now()}`, role: 'client', content: messageText, createdAt: new Date().toISOString() },
-      response.message,
-    ]
+    sessionMessages.value = [...sessionMessages.value, response.message]
     applySnapshotDelta(response.snapshotDelta)
   } catch (err) {
     loadError.value =
       err instanceof Error ? err.message : 'Voice message could not be sent. Please try again.'
+    sessionMessages.value = sessionMessages.value.map((m) =>
+      m.id === tempId ? { ...m, failed: true } : m,
+    )
   } finally {
     sending.value = false
   }
@@ -616,9 +655,9 @@ async function sendMessage() {
     {
       id: tempId,
       role: 'client',
-      content:
-        messageText || `Uploaded ${queuedAttachments.length} attachment${queuedAttachments.length === 1 ? '' : 's'}.`,
+      content: messageText,
       createdAt: new Date().toISOString(),
+      attachments: queuedAttachments.map((a) => ({ type: 'document' as const, name: a.name, mime: a.file.type })),
     },
   ]
   try {
@@ -630,9 +669,6 @@ async function sendMessage() {
     )
     const submissionMessage = buildSubmissionMessage(messageText, readySeeds)
     attachments.value = []
-    sessionMessages.value = sessionMessages.value.map((m) =>
-      m.id === tempId ? { ...m, content: submissionMessage } : m,
-    )
 
     const response = await apiClient.sendPortalMessage({
       sessionId: resolvedSessionId,
