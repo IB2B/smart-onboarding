@@ -6,17 +6,17 @@
       role="status"
       aria-live="polite"
     >
-      <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1c1c1e]/90 px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-3xl">
+      <div class="toast-glass flex items-center gap-3 rounded-2xl px-4 py-3">
         <!-- Icon -->
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/25 ring-1 ring-success/40">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 text-success">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 text-emerald-600">
             <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
           </svg>
         </div>
         <!-- Text -->
         <div class="min-w-0">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/45">Milestone reached</p>
-          <p class="text-[13px] font-semibold text-white">{{ label }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400">Milestone reached</p>
+          <p class="text-[13px] font-semibold text-gray-900">{{ label }}</p>
         </div>
       </div>
     </div>
@@ -53,6 +53,15 @@ watch(
 </script>
 
 <style scoped>
+/* iOS-style frosted glass — translucent so content behind bleeds through */
+.toast-glass {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
 /* Keep all transforms here — never mix with Tailwind translate utilities
    on the animated element, or the properties will override each other. */
 .toast-shell {
