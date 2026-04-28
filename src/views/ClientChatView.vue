@@ -25,24 +25,6 @@
           </kbd>
         </button>
 
-        <!-- Nav items -->
-        <nav class="mt-3 flex flex-col gap-0.5">
-          <button
-            type="button"
-            class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] font-medium text-base-content/70 transition-colors duration-100 hover:bg-base-300/50 hover:text-base-content"
-          >
-            <PhClockCounterClockwise :size="17" />
-            <span>History</span>
-          </button>
-          <button
-            type="button"
-            class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-[13px] font-medium text-base-content/70 transition-colors duration-100 hover:bg-base-300/50 hover:text-base-content"
-          >
-            <PhFile :size="17" />
-            <span>Documents</span>
-          </button>
-        </nav>
-
         <!-- Milestone progress card -->
         <div class="mt-4">
           <MilestoneSidebarCard :onboarding-state="onboarding.onboardingState" />
@@ -59,20 +41,6 @@
             @click="spotlightOpen = true"
           >
             <PhMagnifyingGlass :size="18" />
-          </button>
-          <button
-            type="button"
-            class="flex h-9 w-9 items-center justify-center rounded-lg text-base-content/45 hover:bg-base-300/50 hover:text-base-content/70"
-            aria-label="History"
-          >
-            <PhClockCounterClockwise :size="18" />
-          </button>
-          <button
-            type="button"
-            class="flex h-9 w-9 items-center justify-center rounded-lg text-base-content/45 hover:bg-base-300/50 hover:text-base-content/70"
-            aria-label="Documents"
-          >
-            <PhFile :size="18" />
           </button>
           <!-- Mini progress counter for collapsed state -->
           <div
@@ -255,8 +223,6 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   PhArrowDown,
-  PhClockCounterClockwise,
-  PhFile,
   PhMagnifyingGlass,
   PhSidebarSimple,
 } from '@phosphor-icons/vue'

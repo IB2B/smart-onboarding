@@ -2,22 +2,21 @@
   <Transition name="milestone-toast">
     <div
       v-if="visible"
-      class="fixed left-1/2 top-4 z-[9998] -translate-x-1/2"
+      class="toast-shell"
       role="status"
       aria-live="polite"
     >
-      <div class="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/15 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-3xl dark:bg-black/25 dark:border-white/10">
-        <!-- Success glow dot -->
-        <div class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/20">
-          <div class="absolute inset-0 rounded-full bg-success/10 blur-sm" />
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="relative h-4 w-4 text-success">
+      <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral/85 px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-3xl">
+        <!-- Icon -->
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/25 ring-1 ring-success/40">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 text-success">
             <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
           </svg>
         </div>
         <!-- Text -->
         <div class="min-w-0">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.09em] text-base-content/50">Milestone reached</p>
-          <p class="text-sm font-semibold text-base-content">{{ label }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/45">Milestone reached</p>
+          <p class="text-[13px] font-semibold text-white">{{ label }}</p>
         </div>
       </div>
     </div>
@@ -54,15 +53,26 @@ watch(
 </script>
 
 <style scoped>
+/* Keep all transforms here — never mix with Tailwind translate utilities
+   on the animated element, or the properties will override each other. */
+.toast-shell {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  z-index: 9998;
+  /* base resting state — translateX always present so animation never loses it */
+  transform: translateX(-50%) translateY(0);
+}
+
 .milestone-toast-enter-active {
-  transition: opacity 500ms ease-out, transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 480ms ease-out, transform 480ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .milestone-toast-leave-active {
-  transition: opacity 400ms ease-in, transform 400ms ease-in;
+  transition: opacity 350ms ease-in, transform 350ms ease-in;
 }
 .milestone-toast-enter-from {
   opacity: 0;
-  transform: translateX(-50%) translateY(-100%);
+  transform: translateX(-50%) translateY(-110%);
 }
 .milestone-toast-enter-to {
   opacity: 1;
@@ -74,6 +84,6 @@ watch(
 }
 .milestone-toast-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(-20px);
+  transform: translateX(-50%) translateY(-14px);
 }
 </style>
