@@ -6,7 +6,7 @@
       role="status"
       aria-live="polite"
     >
-      <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-neutral/85 px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-3xl">
+      <div class="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#1c1c1e]/90 px-4 py-3 shadow-2xl shadow-black/30 backdrop-blur-3xl">
         <!-- Icon -->
         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/25 ring-1 ring-success/40">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 text-success">
