@@ -43,6 +43,11 @@
           </button>
         </nav>
 
+        <!-- Milestone progress card -->
+        <div class="mt-4">
+          <MilestoneSidebarCard :onboarding-state="onboarding.onboardingState" />
+        </div>
+
       </template>
 
       <template v-else>
@@ -69,6 +74,16 @@
           >
             <PhFile :size="18" />
           </button>
+          <!-- Mini progress counter for collapsed state -->
+          <div
+            class="mt-1 flex h-9 w-9 flex-col items-center justify-center rounded-lg border border-base-300/60 bg-base-100/60 text-center"
+            :title="`${onboarding.completedCount} of 4 milestones complete`"
+          >
+            <span class="text-[11px] font-bold leading-none" :class="onboarding.completedCount === 4 ? 'text-success' : 'text-primary'">
+              {{ onboarding.completedCount }}
+            </span>
+            <span class="text-[8px] font-medium text-base-content/35">/4</span>
+          </div>
         </div>
       </template>
 
@@ -96,8 +111,6 @@
           <span class="admin-topbar-divider" aria-hidden="true" />
           <h1 class="admin-topbar-title truncate">Smart Onboarding</h1>
         </div>
-        <!-- Center: milestone progress bar -->
-        <PortalProgressBar :onboarding-state="onboarding.onboardingState" />
         <!-- Right: DEBUG strip — remove before shipping -->
         <div class="flex flex-1 items-center justify-end gap-1.5">
           <div class="flex items-center gap-1 rounded-lg border border-orange-400/40 bg-orange-400/10 px-2 py-1">
@@ -258,7 +271,7 @@ import ProfileDock from '@/components/system/ProfileDock.vue'
 import SpotlightSearch from '@/components/system/SpotlightSearch.vue'
 import ThreadBlock from '@/components/system/ThreadBlock.vue'
 import TypingIndicator from '@/components/chat/TypingIndicator.vue'
-import PortalProgressBar from '@/components/portal/PortalProgressBar.vue'
+import MilestoneSidebarCard from '@/components/portal/MilestoneSidebarCard.vue'
 import PostOnboardingView from '@/components/portal/PostOnboardingView.vue'
 import MilestoneToast from '@/components/portal/MilestoneToast.vue'
 import type { MessageAttachment, OnboardingBrief, ThreadMessage } from '@/contracts/api'
