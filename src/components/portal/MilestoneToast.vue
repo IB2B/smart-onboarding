@@ -6,16 +6,17 @@
       role="status"
       aria-live="polite"
     >
-      <div class="flex items-center gap-3 rounded-2xl border border-base-300/60 bg-base-100/90 px-4 py-3 shadow-2xl shadow-black/10 backdrop-blur-xl">
-        <!-- Icon -->
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/15 ring-1 ring-success/30">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-4 w-4 text-success">
+      <div class="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/15 px-4 py-3 shadow-2xl shadow-black/20 backdrop-blur-3xl dark:bg-black/25 dark:border-white/10">
+        <!-- Success glow dot -->
+        <div class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success/20">
+          <div class="absolute inset-0 rounded-full bg-success/10 blur-sm" />
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="relative h-4 w-4 text-success">
             <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
           </svg>
         </div>
         <!-- Text -->
         <div class="min-w-0">
-          <p class="text-[10px] font-semibold uppercase tracking-[0.08em] text-base-content/40">Milestone reached</p>
+          <p class="text-[10px] font-semibold uppercase tracking-[0.09em] text-base-content/50">Milestone reached</p>
           <p class="text-sm font-semibold text-base-content">{{ label }}</p>
         </div>
       </div>
@@ -47,16 +48,32 @@ watch(
     label.value = LABELS[store.lastCompletedMilestone] ?? store.lastCompletedMilestone
     visible.value = true
     if (timer) clearTimeout(timer)
-    timer = setTimeout(() => { visible.value = false }, 2800)
+    timer = setTimeout(() => { visible.value = false }, 3000)
   },
 )
 </script>
 
 <style scoped>
-.milestone-toast-enter-active { transition: opacity 220ms ease, transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-.milestone-toast-leave-active { transition: opacity 280ms ease, transform 280ms ease; }
-.milestone-toast-enter-from,
-.milestone-toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.95); }
-.milestone-toast-enter-to,
-.milestone-toast-leave-from { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.milestone-toast-enter-active {
+  transition: opacity 500ms ease-out, transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.milestone-toast-leave-active {
+  transition: opacity 400ms ease-in, transform 400ms ease-in;
+}
+.milestone-toast-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-100%);
+}
+.milestone-toast-enter-to {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.milestone-toast-leave-from {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.milestone-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-20px);
+}
 </style>
