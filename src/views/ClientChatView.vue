@@ -97,7 +97,7 @@
           <h1 class="admin-topbar-title truncate">Smart Onboarding</h1>
         </div>
         <!-- Center: milestone progress bar -->
-        <PortalProgressBar :onboarding-state="onboardingState" />
+        <PortalProgressBar :onboarding-state="onboarding.onboardingState" />
         <!-- Right: balance placeholder -->
         <div class="flex-1" />
       </header>
@@ -105,8 +105,8 @@
       <div class="flex flex-1 flex-col overflow-hidden">
         <!-- POST-ONBOARDING: review / complete state -->
         <PostOnboardingView
-          v-if="isPostOnboarding && !loading && onboardingState"
-          :onboarding-state="onboardingState"
+          v-if="isPostOnboarding && !loading && onboarding.onboardingState"
+          :onboarding-state="onboarding.onboardingState"
           :brief="clientBrief"
           :brief-loading="briefLoading"
           @approve="handleBriefApprove"
@@ -181,7 +181,7 @@
                   @retry="retryMessage"
                 />
                 <Transition name="fade">
-                  <TypingIndicator v-if="sending" :label="'Thinking…'" />
+                  <TypingIndicator v-if="sending && !streaming" :label="'Thinking…'" />
                 </Transition>
               </div>
               <Transition name="fade">
@@ -226,6 +226,7 @@
         @change="onFileSelected"
       />
       <SpotlightSearch :open="spotlightOpen" @close="spotlightOpen = false" />
+      <MilestoneToast />
     </template>
   </AppShell>
 </template>
@@ -243,6 +244,7 @@ import {
 
 import { apiClient } from '@/services/api-client'
 import { useAuthStore } from '@/stores/auth'
+import { useOnboardingStore } from '@/stores/onboarding'
 import AuraLogo from '@/components/system/AuraLogo.vue'
 import AppShell from '@/components/system/AppShell.vue'
 import FloatingComposer from '@/components/system/FloatingComposer.vue'
@@ -252,13 +254,17 @@ import ThreadBlock from '@/components/system/ThreadBlock.vue'
 import TypingIndicator from '@/components/chat/TypingIndicator.vue'
 import PortalProgressBar from '@/components/portal/PortalProgressBar.vue'
 import PostOnboardingView from '@/components/portal/PostOnboardingView.vue'
-import type { MessageAttachment, OnboardingBrief, OnboardingState, ThreadMessage } from '@/contracts/api'
+import MilestoneToast from '@/components/portal/MilestoneToast.vue'
+import type { MessageAttachment, OnboardingBrief, ThreadMessage } from '@/contracts/api'
 import { useSpecLabStore } from '@/stores/spec-lab'
 import { useHotkey } from '@/composables/useHotkey'
 import { useAutoScroll } from '@/composables/useAutoScroll'
+import { useMilestoneConfetti } from '@/composables/useMilestoneConfetti'
 
 const store = useSpecLabStore()
 const auth = useAuthStore()
+const onboarding = useOnboardingStore()
+useMilestoneConfetti()
 const router = useRouter()
 const draft = ref('')
 const spotlightOpen = ref(false)
@@ -277,21 +283,19 @@ useHotkey({
 })
 const sessionMessages = ref<ThreadMessage[]>([])
 const sending = ref(false)
+const streaming = ref(false)
 const loadError = ref('')
 const loading = ref(true)
 const showWelcome = ref(true)
 const clientName = ref('')
 const clientCompany = ref('')
-const onboardingState = ref<OnboardingState | null>(null)
 const clientBrief = ref<OnboardingBrief | null>(null)
 const briefLoading = ref(false)
 let briefPollTimer: ReturnType<typeof setTimeout> | null = null
 let briefPollAttempts = 0
 const BRIEF_MAX_POLL_ATTEMPTS = 40 // ~2 min at 3s intervals
 
-const isPostOnboarding = computed(
-  () => onboardingState.value?.phase === 'review' || onboardingState.value?.phase === 'complete',
-)
+const isPostOnboarding = computed(() => onboarding.isPostOnboarding)
 
 watch(
   () => sessionMessages.value.length,
@@ -343,7 +347,7 @@ onMounted(async () => {
     clientCompany.value = session.session.companyName
     sessionMessages.value = [...session.session.messages]
     showWelcome.value = session.session.messages.length === 0
-    onboardingState.value = session.onboardingState
+    onboarding.setState(session.onboardingState)
     // Load brief immediately if already in review/complete
     const phase = session.onboardingState?.phase
     if (phase === 'review' || phase === 'complete') {
@@ -542,16 +546,8 @@ async function uploadAndProcessAttachments(items: Array<{ name: string; file: Fi
   return processed.ready
 }
 
-function applySnapshotDelta(delta: Partial<{ phase?: string; milestones?: Record<string, unknown> }>) {
-  if (!delta.phase && !delta.milestones) return
-  if (!onboardingState.value) return
-  onboardingState.value = {
-    ...onboardingState.value,
-    ...(delta.phase ? { phase: delta.phase as OnboardingState['phase'] } : {}),
-    ...(delta.milestones
-      ? { milestones: { ...onboardingState.value.milestones, ...(delta.milestones as OnboardingState['milestones']) } }
-      : {}),
-  }
+function applySnapshotDelta(delta: Parameters<typeof onboarding.applySnapshotDelta>[0]) {
+  onboarding.applySnapshotDelta(delta)
   if (delta.phase === 'review') {
     briefPollAttempts = 0
     loadClientBrief()
@@ -559,7 +555,7 @@ function applySnapshotDelta(delta: Partial<{ phase?: string; milestones?: Record
 }
 
 async function handleSendAudio(blob: Blob, durationSec = 0): Promise<void> {
-  if (!resolvedClientId || sending.value) return
+  if (!resolvedClientId || sending.value || streaming.value) return
   sending.value = true
   showWelcome.value = false
 
@@ -611,14 +607,34 @@ async function handleSendAudio(blob: Blob, durationSec = 0): Promise<void> {
     )
 
     const submissionMessage = buildSubmissionMessage('', processed.ready)
-    const response = await apiClient.sendPortalMessage({
+    const assistantId = `assistant_${Date.now()}`
+    let accumulated = ''
+    sessionMessages.value = [
+      ...sessionMessages.value,
+      { id: assistantId, role: 'assistant', content: '', createdAt: new Date().toISOString() },
+    ]
+    for await (const chunk of apiClient.sendPortalMessageStream({
       sessionId: resolvedSessionId,
       clientId: resolvedClientId,
       message: submissionMessage,
       provider: 'openai',
-    })
-    sessionMessages.value = [...sessionMessages.value, response.message]
-    applySnapshotDelta(response.snapshotDelta)
+    })) {
+      if (chunk.error) throw new Error(chunk.error)
+      if (chunk.token) {
+        accumulated += chunk.token
+        streaming.value = true
+        sessionMessages.value = sessionMessages.value.map((m) =>
+          m.id === assistantId ? { ...m, content: accumulated } : m,
+        )
+        scrollToBottom('smooth')
+      }
+      if (chunk.done && chunk.message) {
+        sessionMessages.value = sessionMessages.value.map((m) =>
+          m.id === assistantId ? chunk.message! : m,
+        )
+        if (chunk.snapshotDelta) applySnapshotDelta(chunk.snapshotDelta)
+      }
+    }
   } catch (err) {
     loadError.value =
       err instanceof Error ? err.message : 'Voice message could not be sent. Please try again.'
@@ -627,6 +643,7 @@ async function handleSendAudio(blob: Blob, durationSec = 0): Promise<void> {
     )
   } finally {
     sending.value = false
+    streaming.value = false
   }
 }
 
@@ -638,7 +655,7 @@ function handleWidgetRespond(messageId: string, value: string | number) {
 }
 
 async function sendMessage() {
-  if ((!draft.value.trim() && attachments.value.length === 0) || sending.value) return
+  if ((!draft.value.trim() && attachments.value.length === 0) || sending.value || streaming.value) return
   loadError.value = ''
   sending.value = true
   showWelcome.value = false
@@ -670,14 +687,34 @@ async function sendMessage() {
     const submissionMessage = buildSubmissionMessage(messageText, readySeeds)
     attachments.value = []
 
-    const response = await apiClient.sendPortalMessage({
+    const assistantId = `assistant_${Date.now()}`
+    let accumulated = ''
+    sessionMessages.value = [
+      ...sessionMessages.value,
+      { id: assistantId, role: 'assistant', content: '', createdAt: new Date().toISOString() },
+    ]
+    for await (const chunk of apiClient.sendPortalMessageStream({
       sessionId: resolvedSessionId,
       clientId: resolvedClientId,
       message: submissionMessage,
       provider: 'openai',
-    })
-    sessionMessages.value = [...sessionMessages.value, response.message]
-    applySnapshotDelta(response.snapshotDelta)
+    })) {
+      if (chunk.error) throw new Error(chunk.error)
+      if (chunk.token) {
+        accumulated += chunk.token
+        streaming.value = true
+        sessionMessages.value = sessionMessages.value.map((m) =>
+          m.id === assistantId ? { ...m, content: accumulated } : m,
+        )
+        scrollToBottom('smooth')
+      }
+      if (chunk.done && chunk.message) {
+        sessionMessages.value = sessionMessages.value.map((m) =>
+          m.id === assistantId ? chunk.message! : m,
+        )
+        if (chunk.snapshotDelta) applySnapshotDelta(chunk.snapshotDelta)
+      }
+    }
   } catch (err) {
     loadError.value =
       err instanceof Error ? err.message : 'Message could not be sent. Please try again.'
@@ -686,6 +723,7 @@ async function sendMessage() {
     )
   } finally {
     sending.value = false
+    streaming.value = false
   }
 }
 

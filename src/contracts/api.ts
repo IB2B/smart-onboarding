@@ -296,11 +296,20 @@ export interface ProvisionClientResult {
   emailError?: string
 }
 
+export interface StreamChunk {
+  token?: string
+  done?: boolean
+  message?: ThreadMessage
+  snapshotDelta?: Partial<OnboardingSnapshotDelta>
+  error?: string
+}
+
 export interface ApiAdapter {
   getClients(): Promise<ClientSummary[]>
   getClientThread(clientId: string): Promise<ThreadMessage[]>
   getPortalSession(): Promise<ChatSessionResponse>
   sendPortalMessage(request: ChatRequest): Promise<ChatResponse>
+  sendPortalMessageStream(request: ChatRequest): AsyncGenerator<StreamChunk, void, unknown>
   persistWidgetResponse(messageId: string, value: string | number): Promise<void>
   getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot>
   getAdminClientDetailBundle(clientId: string): Promise<AdminClientDetailBundle>

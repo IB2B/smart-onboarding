@@ -14,7 +14,7 @@
         <div class="flex flex-col items-center gap-0.5">
           <div
             class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold transition-all duration-300"
-            :class="stageClass(stage.key, index)"
+            :class="[stageClass(stage.key, index), { 'milestone-pop': justCompleted === stage.key }]"
           >
             <svg
               v-if="isComplete(stage.key)"
@@ -52,12 +52,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { MilestoneKey, OnboardingState } from '@/contracts/api'
 
 const props = defineProps<{
   onboardingState: OnboardingState | null
 }>()
+
+const justCompleted = ref<MilestoneKey | null>(null)
+let popTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(
+  () => props.onboardingState?.milestones,
+  (next, prev) => {
+    if (!next || !prev) return
+    for (const key of Object.keys(next) as MilestoneKey[]) {
+      if (prev[key]?.status !== 'complete' && next[key]?.status === 'complete') {
+        justCompleted.value = key
+        if (popTimer) clearTimeout(popTimer)
+        popTimer = setTimeout(() => { justCompleted.value = null }, 900)
+      }
+    }
+  },
+  { deep: true },
+)
 
 const STAGES: Array<{ key: MilestoneKey; label: string }> = [
   { key: 'brand_identity', label: 'Brand' },

@@ -15,6 +15,7 @@ import type {
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
+  StreamChunk,
   ThreadMessage,
   WidgetPayload,
 } from '@/contracts/api'
@@ -144,6 +145,11 @@ export class MockApiAdapter implements ApiAdapter {
         pendingItems: ['Confirm launch date', 'Upload logo source files'],
       },
     }
+  }
+
+  async *sendPortalMessageStream(request: ChatRequest): AsyncGenerator<StreamChunk, void, unknown> {
+    const response = await this.sendPortalMessage(request)
+    yield { done: true, message: response.message, snapshotDelta: response.snapshotDelta }
   }
 
   async getAdminDashboardSnapshot(): Promise<AdminDashboardSnapshot> {

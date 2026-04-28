@@ -984,3 +984,12 @@ body {
     display: none;
   }
 }
+
+@keyframes milestone-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}
+.milestone-pop {
+  animation: milestone-pop 700ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}

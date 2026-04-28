@@ -13,6 +13,7 @@ import type {
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
+  StreamChunk,
 } from '@/contracts/api'
 import { MockApiAdapter } from '@/adapters/mock-adapter'
 import { SupabaseApiAdapter } from '@/adapters/supabase-adapter'
@@ -93,6 +94,23 @@ class ApiClient {
       provider: params.provider ?? 'openai',
     }
     return this.adapter.sendPortalMessage(request)
+  }
+
+  sendPortalMessageStream(params: {
+    sessionId: string
+    clientId: string
+    message: string
+    provider?: AiProvider
+    requestId?: string
+  }): AsyncGenerator<StreamChunk, void, unknown> {
+    const request: ChatRequest = {
+      sessionId: params.sessionId,
+      clientId: params.clientId,
+      requestId: params.requestId ?? `req_${Date.now()}`,
+      message: params.message,
+      provider: params.provider ?? 'openai',
+    }
+    return this.adapter.sendPortalMessageStream(request)
   }
 
   persistWidgetResponse(messageId: string, value: string | number): Promise<void> {

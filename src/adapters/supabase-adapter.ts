@@ -17,6 +17,7 @@ import type {
   SeedFileUploadParams,
   SeedNoteCreateParams,
   SeedUrlCreateParams,
+  StreamChunk,
   ThreadMessage,
 } from '@/contracts/api'
 import { supabase } from '@/lib/supabase'
@@ -215,6 +216,49 @@ export class SupabaseApiAdapter implements ApiAdapter {
       sessionId: data.sessionId as string,
       message: mapMessageRow(rawMessage),
       snapshotDelta: (data.snapshotDelta as Partial<OnboardingSnapshotDelta>) ?? {},
+    }
+  }
+
+  async *sendPortalMessageStream(request: ChatRequest): AsyncGenerator<StreamChunk, void, unknown> {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('sendPortalMessageStream: not authenticated')
+
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-agent`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+      },
+      body: JSON.stringify({
+        clientId: request.clientId,
+        message: request.message,
+        provider: request.provider,
+        requestId: request.requestId,
+        sessionId: request.sessionId,
+      }),
+    })
+
+    if (!res.ok || !res.body) throw new Error(`sendPortalMessageStream: HTTP ${res.status}`)
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const blocks = buffer.split('\n\n')
+      buffer = blocks.pop() ?? ''
+      for (const block of blocks) {
+        if (!block.startsWith('data: ')) continue
+        const chunk = JSON.parse(block.slice(6)) as StreamChunk
+        if (chunk.message) chunk.message = mapMessageRow(chunk.message as unknown as Record<string, unknown>)
+        yield chunk
+      }
     }
   }
 

@@ -6,7 +6,7 @@ import {
   buildSystemPrompt,
   trimToTokenBudget,
 } from './lib/context-builder.ts'
-import { callLlm } from './lib/llm.ts'
+import { callLlm, callLlmStream } from './lib/llm.ts'
 import { executeTool, TOOL_DEFINITIONS } from './lib/tools.ts'
 import type {
   ChatAgentRequest,
@@ -347,7 +347,75 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // -----------------------------------------------------------------------
-    // 10. Insert assistant message
+    // 10. Detect if client wants SSE streaming
+    // -----------------------------------------------------------------------
+    const wantsStream = req.headers.get('accept') === 'text/event-stream'
+
+    if (wantsStream) {
+      // Stream tokens from the final LLM pass, then flush DB writes at the end
+      const enc = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          const send = (obj: unknown) =>
+            controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`))
+          try {
+            let fullContent = ''
+            for await (const frame of callLlmStream({
+              messages: llmMessages,
+              provider: resolvedProvider,
+              maxTokens: 1024,
+            })) {
+              if (frame.token) {
+                fullContent += frame.token
+                send({ token: frame.token })
+              }
+              if (frame.finishReason) {
+                fullContent = frame.fullContent ?? fullContent
+              }
+            }
+
+            // DB writes after streaming completes
+            const { data: assistantRow, error: insertErr } = await supabase
+              .from('messages')
+              .insert({
+                client_id: clientId,
+                role: 'assistant',
+                content: fullContent,
+                widget_payload: widgetPayload ?? null,
+                tool_calls: accumulatedToolCalls.length > 0 ? accumulatedToolCalls : null,
+              })
+              .select()
+              .single()
+
+            if (insertErr) throw new Error(`Failed to insert assistant message: ${insertErr.message}`)
+
+            await supabase
+              .from('onboarding_states')
+              .update({ last_activity: new Date().toISOString() })
+              .eq('client_id', clientId)
+
+            send({ done: true, message: assistantRow as Record<string, unknown>, snapshotDelta })
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err)
+            send({ error: msg })
+          } finally {
+            controller.close()
+          }
+        },
+      })
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+          ...CORS_HEADERS,
+        },
+      })
+    }
+
+    // -----------------------------------------------------------------------
+    // 10b. Non-streaming path — insert assistant message
     // -----------------------------------------------------------------------
     const { data: assistantRow, error: insertAssistantError } = await supabase
       .from('messages')
