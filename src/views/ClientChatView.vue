@@ -79,14 +79,7 @@
           <span class="admin-topbar-divider" aria-hidden="true" />
           <h1 class="admin-topbar-title truncate">Smart Onboarding</h1>
         </div>
-        <!-- Right: DEBUG strip — remove before shipping -->
-        <div class="flex flex-1 items-center justify-end gap-1.5">
-          <div class="flex items-center gap-1 rounded-lg border border-orange-400/40 bg-orange-400/10 px-2 py-1">
-            <span class="text-[9px] font-bold uppercase tracking-widest text-orange-500">Debug</span>
-            <button type="button" class="btn btn-xs border-orange-400/30 bg-transparent text-orange-600 hover:bg-orange-400/20" @click="debugTriggerMilestone">🎯 Milestone</button>
-            <button type="button" class="btn btn-xs border-orange-400/30 bg-transparent text-orange-600 hover:bg-orange-400/20" @click="debugResetMilestones">↺ Reset</button>
-          </div>
-        </div>
+        <div class="flex-1" />
       </header>
 
       <div class="flex flex-1 flex-col overflow-hidden">
@@ -729,41 +722,6 @@ function retryMessage(messageId: string) {
   sendMessage()
 }
 
-// ── DEBUG helpers — remove before shipping ───────────────────────────────────
-const DEBUG_MILESTONES: import('@/contracts/api').MilestoneKey[] = [
-  'brand_identity',
-  'technical_needs',
-  'target_audience',
-  'timeline_budget',
-]
-const debugMilestoneIndex = ref(0)
-
-function debugTriggerMilestone() {
-  const key = DEBUG_MILESTONES[debugMilestoneIndex.value % DEBUG_MILESTONES.length]!
-  onboarding.applySnapshotDelta({
-    milestones: { [key]: { status: 'complete', data: {} } },
-  })
-  debugMilestoneIndex.value = (debugMilestoneIndex.value + 1) % DEBUG_MILESTONES.length
-}
-
-function debugResetMilestones() {
-  debugMilestoneIndex.value = 0
-  onboarding.setState(
-    onboarding.onboardingState
-      ? {
-          ...onboarding.onboardingState,
-          phase: 'welcome',
-          milestones: {
-            brand_identity: { status: 'pending', data: {} },
-            technical_needs: { status: 'pending', data: {} },
-            target_audience: { status: 'pending', data: {} },
-            timeline_budget: { status: 'pending', data: {} },
-          },
-        }
-      : null,
-  )
-}
-// ── end DEBUG ─────────────────────────────────────────────────────────────────
 
 async function handleBriefApprove(briefId: string) {
   try {
